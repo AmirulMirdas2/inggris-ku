@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(command -v convert rsvg-convert inkscape)",
+      "Bash(npm rebuild *)",
+      "Bash(convert -background none public/favicon.svg -resize 192x192 public/pwa-192.png)",
+      "Bash(convert -background none public/favicon.svg -resize 512x512 public/pwa-512.png)",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Skill(dataviz)",
+      "Bash(node scripts/validate_palette.js \"#1D9E75,#EF9F27\" --mode light)"
+    ]
+  }
+}

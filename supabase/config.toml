@@ -1,0 +1,9 @@
+project_id = "inggrisku"
+
+# evaluate-sentence dipanggil pengguna login → wajib JWT (default true).
+[functions.evaluate-sentence]
+verify_jwt = true
+
+# send-reminders dipanggil cron (tanpa JWT pengguna) → matikan verifikasi JWT.
+[functions.send-reminders]
+verify_jwt = false
