@@ -74,8 +74,8 @@ export default function SessionRunner({ items, mode }: { items: SessionItem[]; m
       </div>
 
       {phase === 'recognize'
-        ? <PhaseRecognize word={word} onDone={() => setPhase('produce')} />
-        : <PhaseProduce word={word} level={level} onResult={handleResult} />}
+        ? <PhaseRecognize key={i} word={word} onDone={() => setPhase('produce')} />
+        : <PhaseProduce key={i} word={word} level={level} mode={mode} onResult={handleResult} />}
     </div>
   )
 }

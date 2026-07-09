@@ -11,7 +11,8 @@
       "Bash(npm run *)",
       "Bash(npm test *)",
       "Skill(dataviz)",
-      "Bash(node scripts/validate_palette.js \"#1D9E75,#EF9F27\" --mode light)"
+      "Bash(node scripts/validate_palette.js \"#1D9E75,#EF9F27\" --mode light)",
+      "Bash(npx tsc *)"
     ]
   }
 }

@@ -17,8 +17,8 @@ export interface ProduceResult {
 
 // FASE B — produksi terpandu. Tidak pernah nge-blok: selalu ada "Lihat contoh".
 export default function PhaseProduce({
-  word, level, onResult,
-}: { word: Word; level: Level; onResult: (r: ProduceResult) => void }) {
+  word, level, mode, onResult,
+}: { word: Word; level: Level; mode: 'learn' | 'review'; onResult: (r: ProduceResult) => void }) {
   const example = word.example_en ?? `I like ${word.text}.`
   const [feedback, setFeedback] = useState<null | { ok: boolean; msg: string }>(null)
   const [revealed, setRevealed] = useState(false)
@@ -48,9 +48,16 @@ export default function PhaseProduce({
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       className={`card space-y-4 ${feedback && !feedback.ok ? 'shake border-2 border-coral' : ''}`}
     >
-      <p className="text-sm font-semibold text-slate-400">
-        Kata target: <span className="text-brand">{word.text}</span> · {word.translation_id}
-      </p>
+      {mode === 'review' ? (
+        // Review = uji ingatan: sembunyikan kata Inggris, beri arti sebagai petunjuk.
+        <p className="text-sm font-semibold text-slate-400">
+          Ingat kata Inggrisnya: <span className="text-brand">{word.translation_id}</span>
+        </p>
+      ) : (
+        <p className="text-sm font-semibold text-slate-400">
+          Kata target: <span className="text-brand">{word.text}</span> · {word.translation_id}
+        </p>
+      )}
 
       {level === 1 && <BlankExercise word={word} onWrong={markWrong} onRight={(s) => { setFeedback({ ok: true, msg: '' }); pass(s, false) }} disabled={!!feedback?.ok || revealed} />}
       {level === 2 && <ArrangeExercise example={example} onWrong={markWrong} onRight={(s) => { setFeedback({ ok: true, msg: '' }); pass(s, false) }} disabled={!!feedback?.ok || revealed} />}
@@ -83,10 +90,13 @@ function BlankExercise({ word, onWrong, onRight, disabled }: {
 }) {
   const { prompt, answer } = useMemo(() => blankSentence(word.example_en ?? '', word.text), [word])
   const [val, setVal] = useState('')
+  // Blank sepanjang jumlah huruf jawaban, mis. "good" → ＿ ＿ ＿ ＿ (petunjuk panjang).
+  const display = prompt.replace('___', Array(answer.length).fill('＿').join(' '))
   return (
     <div className="space-y-3">
-      <p className="text-lg">Isi bagian kosong:</p>
-      <p className="text-xl font-bold">{prompt}</p>
+      <p className="text-lg">Isi bagian kosong dengan kata Inggris yang tepat:</p>
+      <p className="text-xl font-bold">{display}</p>
+      <p className="text-sm text-slate-400">Petunjuk: artinya “{word.translation_id}” · {answer.length} huruf</p>
       <input
         value={val} disabled={disabled} onChange={(e) => setVal(e.target.value)}
         placeholder="ketik kata…"
