@@ -4,7 +4,8 @@
 // Set secret: supabase secrets set GEMINI_API_KEY=AIza...
 // Dapat key gratis: https://aistudio.google.com/apikey
 
-const MODEL = 'gemini-2.0-flash'
+// alias '-latest' → auto ke versi lite terbaru, hindari model retired (2.0-flash free tier = 0).
+const MODEL = 'gemini-flash-lite-latest'
 
 const cors = {
   'Access-Control-Allow-Origin': '*',

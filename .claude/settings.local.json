@@ -12,7 +12,11 @@
       "Bash(npm test *)",
       "Skill(dataviz)",
       "Bash(node scripts/validate_palette.js \"#1D9E75,#EF9F27\" --mode light)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(supabase functions *)",
+      "Bash(supabase secrets *)",
+      "Bash(supabase projects *)",
+      "Bash(curl -s https://generativelanguage.googleapis.com/v1beta/models?key=__TRACKED_VAR__)"
     ]
   }
 }
