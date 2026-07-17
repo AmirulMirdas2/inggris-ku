@@ -15,7 +15,7 @@ function translateError(msg: string): string {
 
 function Shell({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-6">
+    <div className="animate-fade-up mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-6">
       <div className="text-center">
         <div className="text-4xl">🌱</div>
         <h1 className="mt-2 text-2xl font-extrabold text-brand">{title}</h1>
@@ -62,12 +62,12 @@ function CredentialForm({ mode }: { mode: 'masuk' | 'daftar' }) {
       <input
         type="email" required autoComplete="email" placeholder="Email"
         value={email} onChange={(e) => setEmail(e.target.value)}
-        className="w-full rounded-xl border border-black/10 bg-transparent px-4 py-3 outline-none focus:border-brand dark:border-white/15"
+        className="input !text-base"
       />
       <input
         type="password" required autoComplete={mode === 'daftar' ? 'new-password' : 'current-password'}
         placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
-        className="w-full rounded-xl border border-black/10 bg-transparent px-4 py-3 outline-none focus:border-brand dark:border-white/15"
+        className="input !text-base"
       />
       {error && <p className="text-sm font-semibold text-coral">{error}</p>}
       {notice && <p className="text-sm font-semibold text-success">{notice}</p>}
@@ -128,7 +128,7 @@ export function LupaPassword() {
           <input
             type="email" required placeholder="Email" value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-black/10 bg-transparent px-4 py-3 outline-none focus:border-brand dark:border-white/15"
+            className="input !text-base"
           />
           <button type="submit" disabled={busy} className="btn-primary">
             {busy ? 'Mengirim…' : 'Kirim tautan reset'}

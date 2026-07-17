@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom'
 
 export default function Landing() {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 p-6 text-center">
+    <div className="animate-fade-up mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 p-6 text-center">
       <div className="text-6xl">🌱</div>
-      <h1 className="text-3xl font-extrabold text-brand">InggrisKu</h1>
+      <h1 className="text-4xl font-extrabold tracking-tight text-brand">InggrisKu</h1>
       <p className="text-lg text-slate-600 dark:text-slate-300">
         Belajar bahasa Inggris dari nol total. Pelan tapi nempel — pakai
         pengulangan berjarak dan latihan bikin kalimat sendiri.

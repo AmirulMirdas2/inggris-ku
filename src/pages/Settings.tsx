@@ -24,7 +24,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-up space-y-6">
       <h1 className="text-2xl font-extrabold">Pengaturan</h1>
 
       <section className="card space-y-4">
@@ -36,13 +36,13 @@ export default function Settings() {
           <input
             type="time" value={profile.reminder_time.slice(0, 5)}
             onChange={(e) => patch({ reminder_time: e.target.value })}
-            className="rounded-lg border border-black/10 bg-transparent px-3 py-2 dark:border-white/15"
+            className="input-sm"
           />
         </Row>
         <Row label="Zona waktu">
           <select
             value={profile.timezone} onChange={(e) => patch({ timezone: e.target.value })}
-            className="rounded-lg border border-black/10 bg-transparent px-3 py-2 dark:border-white/15"
+            className="input-sm"
           >
             {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
           </select>
@@ -58,6 +58,7 @@ export default function Settings() {
           <input
             type="range" min={0.5} max={1.2} step={0.1} value={rate}
             onChange={(e) => { const r = Number(e.target.value); setRate(r); setTtsRate(r) }}
+            className="accent-brand"
           />
         </Row>
         <button onClick={() => speak('Hello, how are you today?', rate)} className="btn-ghost">
@@ -86,10 +87,10 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   return (
     <button
       onClick={() => onChange(!checked)}
-      className={`h-7 w-12 rounded-full transition ${checked ? 'bg-brand' : 'bg-black/15 dark:bg-white/20'}`}
+      className={`h-7 w-12 rounded-full transition duration-200 ease-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-cream dark:focus-visible:ring-offset-slate-900 ${checked ? 'bg-brand' : 'bg-black/15 dark:bg-white/20'}`}
       aria-pressed={checked}
     >
-      <span className={`block h-6 w-6 rounded-full bg-white transition ${checked ? 'translate-x-6' : 'translate-x-0.5'}`} />
+      <span className={`block h-6 w-6 rounded-full bg-white shadow-sm transition duration-200 ease-soft ${checked ? 'translate-x-6' : 'translate-x-0.5'}`} />
     </button>
   )
 }

@@ -7,7 +7,7 @@ import {
   applyReview, recordAttempt, addError, bumpProgress, xpFor, todayIn,
 } from '../../lib/api'
 import { useAuth } from '../../store/auth'
-import { celebrate } from '../../lib/celebrate'
+import { celebrate, celebrateMastered } from '../../lib/celebrate'
 import PhaseRecognize from './PhaseRecognize'
 import PhaseProduce, { type ProduceResult } from './PhaseProduce'
 
@@ -41,8 +41,9 @@ export default function SessionRunner({ items, mode }: { items: SessionItem[]; m
     const gained = xpFor(true, r.usedHint, r.bonusTense)
 
     // Persist. Dijalankan paralel; kegagalan tidak menghentikan sesi.
+    let becameMastered = false
     try {
-      const { becameMastered } = await applyReview({ userId: session!.user.id, word, quality, today, prev })
+      ;({ becameMastered } = await applyReview({ userId: session!.user.id, word, quality, today, prev }))
       await recordAttempt({
         userId: session!.user.id, wordId: word.id, sentence: r.sentence, correct,
         corrected: r.corrected, explanation: r.explanation, bonus: r.bonusTense,
@@ -60,7 +61,7 @@ export default function SessionRunner({ items, mode }: { items: SessionItem[]; m
     }
 
     setXpGained((x) => x + gained)
-    if (correct) celebrate()
+    if (correct) (becameMastered ? celebrateMastered() : celebrate())
     next()
   }
 
@@ -68,9 +69,9 @@ export default function SessionRunner({ items, mode }: { items: SessionItem[]; m
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
-          <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${(i / items.length) * 100}%` }} />
+          <div className="h-full rounded-full bg-brand transition-[width] duration-500 ease-soft" style={{ width: `${(i / items.length) * 100}%` }} />
         </div>
-        <span className="text-sm text-slate-400">{i + 1}/{items.length}</span>
+        <span className="tnum text-sm text-slate-400">{i + 1}/{items.length}</span>
       </div>
 
       {phase === 'recognize'
@@ -85,7 +86,7 @@ function Summary({ xp, count }: { xp: number; count: number }) {
     <div className="card space-y-4 text-center">
       <div className="text-5xl">🎉</div>
       <h2 className="text-2xl font-extrabold">Sesi selesai!</h2>
-      <p className="text-slate-500 dark:text-slate-400">{count} kata dilatih · +{xp} XP</p>
+      <p className="tnum text-slate-500 dark:text-slate-400">{count} kata dilatih · +{xp} XP</p>
       <Link to="/dashboard" className="btn-primary block text-center">Kembali ke Beranda</Link>
     </div>
   )

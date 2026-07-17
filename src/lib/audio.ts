@@ -68,6 +68,6 @@ export function listenOnce(): Promise<string> {
 }
 
 // Getar halus di Android (diabaikan di iOS).
-export function buzz(ms = 30) {
+export function buzz(ms: number | number[] = 30) {
   navigator.vibrate?.(ms)
 }

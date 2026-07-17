@@ -21,3 +21,13 @@ export function celebrate() {
   ding()
   buzz(30)
 }
+
+// Momen "kata dikuasai": ledakan lebih besar, dua meriam samping, warna brand.
+export function celebrateMastered() {
+  const colors = ['#1D9E75', '#EF9F27', '#639922']
+  confetti({ particleCount: 120, spread: 100, startVelocity: 45, origin: { y: 0.65 }, colors, disableForReducedMotion: true })
+  confetti({ particleCount: 50, angle: 60, spread: 60, origin: { x: 0, y: 0.7 }, colors, disableForReducedMotion: true })
+  confetti({ particleCount: 50, angle: 120, spread: 60, origin: { x: 1, y: 0.7 }, colors, disableForReducedMotion: true })
+  ding()
+  buzz([40, 30, 60])
+}

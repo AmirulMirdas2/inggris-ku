@@ -48,6 +48,7 @@ export default function PhaseProduce({
     <motion.div
       key={word.id}
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 24 }}
       className={`card space-y-4 ${feedback && !feedback.ok ? 'shake border-2 border-coral' : ''}`}
     >
       {mode === 'review' ? (
@@ -114,7 +115,7 @@ function BlankExercise({ word, onWrong, onRight, disabled }: {
       <input
         value={val} disabled={disabled} onChange={(e) => setVal(e.target.value)}
         placeholder="ketik kata…"
-        className="w-full rounded-xl border border-black/10 bg-transparent px-4 py-3 text-lg outline-none focus:border-brand dark:border-white/15"
+        className="input"
       />
       <button
         disabled={disabled || !val.trim()}
@@ -191,7 +192,7 @@ function FreeExercise({ word, onWrong, onRight, disabled }: {
       <textarea
         value={val} disabled={disabled} onChange={(e) => setVal(e.target.value)} rows={2}
         placeholder="tulis kalimat bahasa Inggris…"
-        className="w-full rounded-xl border border-black/10 bg-transparent px-4 py-3 text-lg outline-none focus:border-brand dark:border-white/15"
+        className="input resize-none"
       />
       <button onClick={check} disabled={disabled || busy || !val.trim()} className="btn-primary">
         {busy ? 'Menilai…' : 'Periksa'}

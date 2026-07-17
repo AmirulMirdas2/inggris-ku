@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { useAuth } from '../store/auth'
 import { fetchDueCards, todayIn } from '../lib/api'
+import { Skeleton } from '../components/Skeleton'
+
+// Masuk berjenjang: tiap blok naik-fade sedikit demi sedikit.
+const container = { show: { transition: { staggerChildren: 0.06 } } }
+const item = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 24 } },
+} as const
 
 const NEXT_MILESTONE = [
   { at: 10, label: 'Kata pertama dikuasai' },
@@ -19,45 +28,60 @@ export default function Dashboard() {
     fetchDueCards(todayIn(profile.timezone)).then((r) => setDue(r.length)).catch(() => {})
   }, [profile])
 
-  if (!profile) return <div className="py-16 text-center text-slate-400">Memuat beranda…</div>
+  if (!profile) return (
+    <div className="animate-fade-up space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+      </div>
+      <div className="space-y-3">
+        <Skeleton className="h-14 w-full rounded-full" />
+        <Skeleton className="h-14 w-full rounded-full" />
+      </div>
+      <Skeleton className="h-28 w-full rounded-card" />
+    </div>
+  )
   const next = NEXT_MILESTONE.find((m) => profile.words_mastered < m.at) ?? NEXT_MILESTONE[NEXT_MILESTONE.length - 1]
   const pct = Math.min(100, Math.round((profile.words_mastered / next.at) * 100))
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold">Halo, {profile.display_name}! 👋</h1>
+    <motion.div className="space-y-6" variants={container} initial="hidden" animate="show">
+      <motion.div variants={item}>
+        <h1 className="text-2xl font-extrabold">Halo, {profile.display_name} <span aria-hidden>👋</span></h1>
         <p className="text-slate-500 dark:text-slate-400">Siap belajar hari ini?</p>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <motion.div className="grid grid-cols-3 gap-3" variants={item}>
         <Stat label="Target" value={`${profile.daily_goal}`} icon="🎯" />
         <Stat label="Streak" value={`${profile.streak_days} hari`} icon="🔥" />
         <Stat label="XP" value={`${profile.xp}`} icon="⭐" />
-      </div>
+      </motion.div>
 
-      <div className="space-y-3">
+      <motion.div className="space-y-3" variants={item}>
         <Link to="/belajar" className="btn-primary block text-center">Mulai belajar</Link>
         <Link to="/review" className="btn-ghost block text-center">Review hari ini ({due})</Link>
-      </div>
+      </motion.div>
 
-      <div className="card">
+      <motion.div className="card" variants={item}>
         <p className="text-sm font-semibold text-slate-400">Milestone berikutnya</p>
         <p className="mt-1 text-lg font-bold">{next.label}</p>
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
-          <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-full rounded-full bg-accent transition-[width] duration-500 ease-soft" style={{ width: `${pct}%` }} />
         </div>
-        <p className="mt-1 text-xs text-slate-400">{profile.words_mastered}/{next.at} kata</p>
-      </div>
-    </div>
+        <p className="tnum mt-1 text-xs text-slate-400">{profile.words_mastered}/{next.at} kata</p>
+      </motion.div>
+    </motion.div>
   )
 }
 
 function Stat({ label, value, icon }: { label: string; value: string; icon: string }) {
   return (
-    <div className="card flex flex-col items-center gap-1 py-4">
+    <div className="tile flex flex-col items-center gap-1">
       <span className="text-2xl">{icon}</span>
-      <span className="text-lg font-bold">{value}</span>
+      <span className="tnum text-lg font-bold">{value}</span>
       <span className="text-xs text-slate-400">{label}</span>
     </div>
   )

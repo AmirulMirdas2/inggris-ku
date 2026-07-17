@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { fetchStudiedWords, type StudiedWord } from '../lib/api'
 import { useAuth } from '../store/auth'
 import { speak } from '../lib/audio'
+import { Skeleton } from '../components/Skeleton'
 
 // Kelompokkan kata per tanggal lokal terakhir dilatih, terbaru dulu.
 function groupByDate(words: StudiedWord[], tz: string) {
@@ -27,7 +28,14 @@ export default function Vocabulary() {
     fetchStudiedWords().then(setWords).catch(() => setWords([]))
   }, [profile])
 
-  if (!profile || !words) return <div className="py-16 text-center text-slate-400">Memuat kosakata…</div>
+  if (!profile || !words) return (
+    <div className="animate-fade-up space-y-4">
+      <Skeleton className="h-8 w-40" />
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-2xl" />)}
+      </div>
+    </div>
+  )
 
   if (words.length === 0) {
     return (
@@ -44,10 +52,10 @@ export default function Vocabulary() {
   const groups = groupByDate(words, profile.timezone)
 
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-up space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold">Kosakataku</h1>
-        <p className="text-slate-500 dark:text-slate-400">
+        <p className="tnum text-slate-500 dark:text-slate-400">
           {words.length} kata dipelajari · <span className="font-semibold text-brand">{mastered} dikuasai</span> 🎉
         </p>
         <p className="mt-1 text-xs text-slate-400">
@@ -67,7 +75,7 @@ export default function Vocabulary() {
             {g.words.map((w) => (
               <button
                 key={w.text} onClick={() => speak(w.text)}
-                className="card flex items-center justify-between !p-3 text-left hover:ring-2 hover:ring-brand/30"
+                className="tile flex items-center justify-between !p-3 text-left transition duration-200 ease-soft hover:ring-2 hover:ring-brand/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
               >
                 <span>
                   <span className="font-bold text-brand">{w.text}</span>

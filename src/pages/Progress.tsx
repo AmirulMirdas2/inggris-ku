@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../store/auth'
 import { fetchProgressByWeek, type WeekProgress } from '../lib/api'
+import { Skeleton } from '../components/Skeleton'
 
 const MILESTONES = [
   { at: 10, label: 'Kata pertama dikuasai — awal yang bagus!' },
@@ -27,16 +28,16 @@ export default function Progress() {
   const level = mastered >= 300 ? 'A1+' : mastered >= 100 ? 'A1-lite' : 'Pra-A1'
 
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-up space-y-6">
       <h1 className="text-2xl font-extrabold">Progres</h1>
 
       <div className="card text-center">
-        <p className="text-5xl font-extrabold text-brand">{mastered}</p>
+        <p className="tnum text-5xl font-extrabold text-brand">{mastered}</p>
         <p className="text-slate-500 dark:text-slate-400">kata dikuasai</p>
         <div className="mt-4 h-3 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
-          <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-full rounded-full bg-brand transition-[width] duration-500 ease-soft" style={{ width: `${pct}%` }} />
         </div>
-        <p className="mt-2 text-sm text-slate-400">{pct}% dari 500 kata paling sering · perkiraan level {level}</p>
+        <p className="tnum mt-2 text-sm text-slate-400">{pct}% dari 500 kata paling sering · perkiraan level {level}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -48,7 +49,9 @@ export default function Progress() {
       <div className="card space-y-4">
         <h2 className="font-bold">Progres per minggu</h2>
         {!weeks ? (
-          <p className="text-sm text-slate-400">Memuat…</p>
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
+          </div>
         ) : weeks.length === 0 ? (
           <p className="text-sm text-slate-400">Belum ada data. Mulai belajar dulu, yuk!</p>
         ) : (
@@ -79,7 +82,7 @@ function WeekBar({ w }: { w: WeekProgress }) {
     <div>
       <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
         <span className="font-semibold">Minggu {w.week} · <span className="text-slate-400">{WEEK_THEME[w.week] ?? ''}</span></span>
-        <span className="whitespace-nowrap text-slate-400">
+        <span className="tnum whitespace-nowrap text-slate-400">
           <span className="text-brand">{w.mastered} dikuasai</span>
           {w.learning > 0 && <> · <span className="text-accent">{w.learning} dipelajari</span></>}
           {' '}/ {w.total}
@@ -87,8 +90,8 @@ function WeekBar({ w }: { w: WeekProgress }) {
       </div>
       {/* track resesif; segmen dikuasai (brand) + sedang dipelajari (amber), gap 2px */}
       <div className="flex h-3 gap-0.5 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
-        <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${masteredPct}%` }} />
-        <div className="h-full rounded-full bg-accent/70 transition-all" style={{ width: `${learningPct}%` }} />
+        <div className="h-full rounded-full bg-brand transition-[width] duration-500 ease-soft" style={{ width: `${masteredPct}%` }} />
+        <div className="h-full rounded-full bg-accent/70 transition-[width] duration-500 ease-soft" style={{ width: `${learningPct}%` }} />
       </div>
     </div>
   )
@@ -96,9 +99,9 @@ function WeekBar({ w }: { w: WeekProgress }) {
 
 function Stat({ icon, value, label }: { icon: string; value: number; label: string }) {
   return (
-    <div className="card flex flex-col items-center gap-1 py-4">
+    <div className="tile flex flex-col items-center gap-1">
       <span className="text-2xl">{icon}</span>
-      <span className="text-lg font-bold">{value}</span>
+      <span className="tnum text-lg font-bold">{value}</span>
       <span className="text-xs text-slate-400">{label}</span>
     </div>
   )

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { fetchErrors, resolveError, todayIn } from '../lib/api'
 import { useAuth } from '../store/auth'
 import { speak } from '../lib/audio'
+import { ListSkeleton } from '../components/Skeleton'
 
 // Deck Koreksi: kesalahan lama diulang. Tandai paham → resolved = true.
 export default function Corrections() {
@@ -18,7 +19,7 @@ export default function Corrections() {
     setErrors((e) => e?.filter((x) => x.id !== id) ?? null)
   }
 
-  if (!errors) return <div className="py-16 text-center text-slate-400">Memuat…</div>
+  if (!errors) return <div className="animate-fade-up"><ListSkeleton rows={3} /></div>
   if (errors.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-16 text-center">
@@ -30,7 +31,7 @@ export default function Corrections() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="animate-fade-up space-y-4">
       <h1 className="text-2xl font-extrabold">Deck Koreksi</h1>
       <p className="text-slate-500 dark:text-slate-400">Ulangi yang sempat keliru — pelan-pelan nempel.</p>
       {errors.map((e) => (

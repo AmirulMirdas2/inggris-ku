@@ -19,7 +19,7 @@ function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label="Ganti tema terang/gelap"
-      className="rounded-full p-2 text-xl hover:bg-black/5 dark:hover:bg-white/10"
+      className="rounded-full p-2 text-xl transition duration-200 ease-soft hover:bg-black/5 dark:hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
     >
       {theme === 'dark' ? '☀️' : '🌙'}
     </button>
@@ -70,9 +70,9 @@ export default function Layout() {
 }
 
 const navItem = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-3 rounded-xl px-3 py-2 font-semibold transition ${
+  `flex items-center gap-3 rounded-xl px-3 py-2 font-semibold transition duration-200 ease-soft ${
     isActive ? 'bg-brand/10 text-brand' : 'text-slate-600 hover:bg-black/5 dark:text-slate-300 dark:hover:bg-white/5'
   }`
 
 const bottomItem = ({ isActive }: { isActive: boolean }) =>
-  `flex flex-col items-center gap-0.5 py-2 ${isActive ? 'text-brand' : 'text-slate-400'}`
+  `flex flex-col items-center gap-0.5 py-2 transition duration-200 ease-soft ${isActive ? 'text-brand' : 'text-slate-400'}`

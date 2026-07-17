@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { fetchNewWords, advanceWeek } from '../lib/api'
 import { useAuth } from '../store/auth'
 import SessionRunner, { type SessionItem } from '../components/session/SessionRunner'
+import { ListSkeleton } from '../components/Skeleton'
 
 export default function Learn() {
   const { profile, setProfile } = useAuth()
@@ -28,12 +29,12 @@ export default function Learn() {
 }
 
 function Loading() {
-  return <div className="py-16 text-center text-slate-400">Menyiapkan kata baru… 🌱</div>
+  return <div className="animate-fade-up"><ListSkeleton rows={3} /></div>
 }
 
 function Empty({ week, onSkip }: { week: number; onSkip: () => void }) {
   return (
-    <div className="space-y-4 py-8">
+    <div className="animate-fade-up space-y-4 py-8">
       <div className="rounded-card border-2 border-accent/50 bg-accent/10 p-5 text-center">
         <div className="text-4xl">🎈</div>
         <h1 className="mt-2 text-xl font-extrabold">Kata Minggu {week} sudah habis!</h1>

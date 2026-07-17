@@ -17,7 +17,10 @@
       "Bash(supabase secrets *)",
       "Bash(supabase projects *)",
       "Bash(curl -s https://generativelanguage.googleapis.com/v1beta/models?key=__TRACKED_VAR__)",
-      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('benar:',d['benar']\\);print\\('koreksi:',d.get\\('kalimatKoreksi'\\)\\);print\\('arti:',d.get\\('artiKalimatId'\\)\\)\")"
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('benar:',d['benar']\\);print\\('koreksi:',d.get\\('kalimatKoreksi'\\)\\);print\\('arti:',d.get\\('artiKalimatId'\\)\\)\")",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\(json.dumps\\({**d.get\\('dependencies',{}\\),**d.get\\('devDependencies',{}\\)},indent=1\\)\\)\")",
+      "Read(//home/amirul/.claude/**)",
+      "Read(//home/amirul/.claude/skills/**)"
     ]
   }
 }
