@@ -15,7 +15,7 @@ const cors = {
 
 const FALLBACK = {
   benar: false, pakaiKataTarget: false, tenseDetected: 'unknown',
-  sesuaiTenseTarget: false, kalimatKoreksi: '',
+  sesuaiTenseTarget: false, kalimatKoreksi: '', artiKalimatId: '',
   penjelasanId: 'Maaf, penilaian sedang bermasalah. Coba lagi sebentar ya. 🙂',
   bonusTense: false,
 }
@@ -39,6 +39,7 @@ Deno.serve(async (req) => {
       `Format:\n{\n  "benar": true|false,\n  "pakaiKataTarget": true|false,\n` +
       `  "tenseDetected": "string",\n  "sesuaiTenseTarget": true|false,\n` +
       `  "kalimatKoreksi": "string (kosong jika sudah benar)",\n` +
+      `  "artiKalimatId": "arti Bahasa Indonesia dari kalimat yang BENAR (kalimat siswa bila sudah benar, atau kalimatKoreksi bila dikoreksi)",\n` +
       `  "penjelasanId": "1-2 kalimat Bahasa Indonesia, ramah, satu koreksi + satu pujian",\n` +
       `  "bonusTense": true|false\n}`
 

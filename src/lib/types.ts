@@ -52,6 +52,7 @@ export interface Evaluation {
   tenseDetected: string
   sesuaiTenseTarget: boolean
   kalimatKoreksi: string
+  artiKalimatId: string
   penjelasanId: string
   bonusTense: boolean
 }

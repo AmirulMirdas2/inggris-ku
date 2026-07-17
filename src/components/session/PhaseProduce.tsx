@@ -20,11 +20,13 @@ export default function PhaseProduce({
   word, level, mode, onResult,
 }: { word: Word; level: Level; mode: 'learn' | 'review'; onResult: (r: ProduceResult) => void }) {
   const example = word.example_en ?? `I like ${word.text}.`
-  const [feedback, setFeedback] = useState<null | { ok: boolean; msg: string }>(null)
+  const [feedback, setFeedback] = useState<null | { ok: boolean; msg: string; arti?: string }>(null)
   const [revealed, setRevealed] = useState(false)
   const [firstWrong, setFirstWrong] = useState<string | null>(null)
   const [bonusTense, setBonusTense] = useState(false)
   const [corrected, setCorrected] = useState<string | undefined>()
+  // Level 3: setelah kalimat benar, tahan sebentar untuk tampilkan arti sebelum lanjut.
+  const [success, setSuccess] = useState<null | { sentence: string; arti: string }>(null)
 
   function pass(sentence: string, usedHint: boolean) {
     onResult({
@@ -37,9 +39,9 @@ export default function PhaseProduce({
     })
   }
 
-  function markWrong(attempt: string, msg: string) {
+  function markWrong(attempt: string, msg: string, arti?: string) {
     if (firstWrong === null) setFirstWrong(attempt)
-    setFeedback({ ok: false, msg })
+    setFeedback({ ok: false, msg, arti })
   }
 
   return (
@@ -61,11 +63,23 @@ export default function PhaseProduce({
 
       {level === 1 && <BlankExercise word={word} onWrong={markWrong} onRight={(s) => { setFeedback({ ok: true, msg: '' }); pass(s, false) }} disabled={!!feedback?.ok || revealed} />}
       {level === 2 && <ArrangeExercise example={example} onWrong={markWrong} onRight={(s) => { setFeedback({ ok: true, msg: '' }); pass(s, false) }} disabled={!!feedback?.ok || revealed} />}
-      {level === 3 && <FreeExercise word={word} onWrong={markWrong} onRight={(s, bonus, corr) => { setBonusTense(bonus); setCorrected(corr); setFeedback({ ok: true, msg: '' }); pass(s, false) }} disabled={!!feedback?.ok || revealed} />}
+      {level === 3 && <FreeExercise word={word} onWrong={markWrong} onRight={(s, bonus, corr, arti) => { setBonusTense(bonus); setCorrected(corr); setSuccess({ sentence: s, arti }) }} disabled={!!feedback?.ok || revealed || !!success} />}
+
+      {success && (
+        <div className="space-y-3 rounded-xl bg-success/10 p-3">
+          <p className="font-semibold text-success">✅ Mantap, kalimatmu tepat!</p>
+          <button onClick={() => speak(success.sentence)} className="font-semibold text-brand">🔊 {success.sentence}</button>
+          {success.arti && <p className="text-sm text-slate-500 dark:text-slate-400">Artinya: {success.arti}</p>}
+          <button onClick={() => pass(success.sentence, false)} className="btn-primary mt-1">Lanjut</button>
+        </div>
+      )}
 
       {feedback && !feedback.ok && (
         <div className="space-y-3">
           <p className="rounded-xl bg-coral/10 p-3 text-coral">{feedback.msg}</p>
+          {feedback.arti && (
+            <p className="text-sm text-slate-500 dark:text-slate-400">Arti kalimat yang benar: {feedback.arti}</p>
+          )}
           {revealed ? (
             <div className="rounded-xl bg-black/5 p-3 dark:bg-white/5">
               <button onClick={() => speak(example)} className="font-semibold text-brand">🔊 {example}</button>
@@ -150,7 +164,10 @@ function ArrangeExercise({ example, onWrong, onRight, disabled }: {
 
 // --- Level 3: kalimat bebas (LLM) ---
 function FreeExercise({ word, onWrong, onRight, disabled }: {
-  word: Word; onWrong: (a: string, m: string) => void; onRight: (s: string, bonus: boolean, corr?: string) => void; disabled: boolean
+  word: Word
+  onWrong: (a: string, m: string, arti?: string) => void
+  onRight: (s: string, bonus: boolean, corr: string | undefined, arti: string) => void
+  disabled: boolean
 }) {
   const [val, setVal] = useState('')
   const [busy, setBusy] = useState(false)
@@ -159,8 +176,8 @@ function FreeExercise({ word, onWrong, onRight, disabled }: {
     setBusy(true)
     try {
       const ev = await evaluateSentence(word.text, word.tense_focus, val)
-      if (ev.benar && ev.pakaiKataTarget) onRight(val, ev.bonusTense, ev.kalimatKoreksi || undefined)
-      else onWrong(val, ev.penjelasanId || 'Belum tepat, tapi usahamu bagus! Coba perbaiki sedikit.')
+      if (ev.benar && ev.pakaiKataTarget) onRight(val, ev.bonusTense, ev.kalimatKoreksi || undefined, ev.artiKalimatId)
+      else onWrong(val, ev.penjelasanId || 'Belum tepat, tapi usahamu bagus! Coba perbaiki sedikit.', ev.artiKalimatId)
     } catch {
       onWrong(val, 'Koneksi bermasalah. Cek internet lalu coba lagi ya. 🙂')
     } finally {
