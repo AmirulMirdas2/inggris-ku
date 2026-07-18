@@ -4,6 +4,7 @@ import { fetchNewWords, advanceWeek } from '../lib/api'
 import { useAuth } from '../store/auth'
 import SessionRunner, { type SessionItem } from '../components/session/SessionRunner'
 import { ListSkeleton } from '../components/Skeleton'
+import { PixelIcon } from '../components/PixelIcon'
 
 export default function Learn() {
   const { profile, setProfile } = useAuth()
@@ -36,7 +37,7 @@ function Empty({ week, onSkip }: { week: number; onSkip: () => void }) {
   return (
     <div className="animate-fade-up space-y-4 py-8">
       <div className="rounded-card border-2 border-accent/50 bg-accent/10 p-5 text-center">
-        <div className="text-4xl">🎈</div>
+        <div className="flex justify-center"><PixelIcon name="balloon" size={48} className="animate-bob" /></div>
         <h1 className="mt-2 text-xl font-extrabold">Kata Minggu {week} sudah habis!</h1>
         <p className="mt-1 text-slate-600 dark:text-slate-300">
           Semua kata baru minggu ini sudah kamu mulai. Cara terbaik: perkuat lewat
@@ -53,7 +54,7 @@ function Empty({ week, onSkip }: { week: number; onSkip: () => void }) {
           Lihat kosakata yang sudah kupelajari
         </Link>
       </div>
-      <p className="text-center text-xs text-slate-400">
+      <p className="text-center text-xs muted">
         Melewati minggu boleh saja — tapi mengulang kata lama tetap penting agar tidak lupa.
       </p>
     </div>

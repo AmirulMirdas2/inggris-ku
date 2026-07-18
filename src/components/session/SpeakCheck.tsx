@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { listenOnce, sttSupported } from '../../lib/audio'
 import { normalize } from '../../lib/exercises'
+import { PixelIcon } from '../PixelIcon'
 
 // Latihan bicara opsional. Sembunyi total bila STT tak didukung (Safari iOS dsb).
 export default function SpeakCheck({ target }: { target: string }) {
@@ -20,9 +21,9 @@ export default function SpeakCheck({ target }: { target: string }) {
   return (
     <div className="text-sm">
       <button onClick={go} disabled={state === 'listening'} className="font-semibold text-brand">
-        {state === 'listening' ? '🎤 Mendengarkan…' : '🎤 Coba ucapkan'}
+        <span className="inline-flex items-center gap-2"><PixelIcon name="mic" size={16} /> {state === 'listening' ? 'Mendengarkan…' : 'Coba ucapkan'}</span>
       </button>
-      {state === 'ok' && <span className="ml-2 text-success">Bagus, pengucapanmu pas! 👏</span>}
+      {state === 'ok' && <span className="ml-2 text-success">Bagus, pengucapanmu pas</span>}
       {state === 'retry' && <span className="ml-2 text-accent">Hampir! Coba sekali lagi.</span>}
     </div>
   )

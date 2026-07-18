@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { PixelIcon } from '../PixelIcon'
 import type { Word } from '../../lib/types'
 import { speak } from '../../lib/audio'
 import SpeakCheck from './SpeakCheck'
@@ -8,7 +9,7 @@ export default function PhaseRecognize({ word, onDone }: { word: Word; onDone: (
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+      transition={{ duration: 0.2, ease: [0.6, 0, 0.4, 1] }}
       className="card space-y-5 text-center"
     >
       <div>
@@ -18,19 +19,19 @@ export default function PhaseRecognize({ word, onDone }: { word: Word; onDone: (
           aria-label={`Dengar ${word.text}`}
         >
           <span className="text-4xl font-extrabold text-brand">{word.text}</span>
-          <span className="text-2xl transition-transform duration-200 ease-soft group-hover:scale-110" aria-hidden>🔊</span>
+          <PixelIcon name="speaker" size={24} className="transition-transform duration-75 ease-soft group-hover:scale-110" />
         </button>
-        {word.phonetic && <p className="mt-1 text-slate-400">{word.phonetic}</p>}
+        {word.phonetic && <p className="mt-1 muted">{word.phonetic}</p>}
         <p className="mt-2 text-xl">{word.translation_id}</p>
-        {word.chunk && <p className="mt-1 text-sm text-slate-400">frasa: {word.chunk}</p>}
+        {word.chunk && <p className="mt-1 text-sm muted">frasa: {word.chunk}</p>}
       </div>
 
       {word.example_en && (
         <div className="rounded-xl bg-black/5 p-4 text-left dark:bg-white/5">
           <button onClick={() => speak(word.example_en!)} className="font-semibold text-brand">
-            🔊 {word.example_en}
+            <span className="inline-flex items-center gap-2"><PixelIcon name="speaker" size={16} /> {word.example_en}</span>
           </button>
-          <p className="text-slate-500 dark:text-slate-400">{word.example_id}</p>
+          <p className="muted">{word.example_id}</p>
           <div className="mt-2"><SpeakCheck target={word.example_en} /></div>
         </div>
       )}

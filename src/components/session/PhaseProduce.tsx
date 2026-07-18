@@ -5,6 +5,7 @@ import type { Level } from '../../lib/exercises'
 import { blankSentence, checkBlank, checkArrange, tokenize, shuffle } from '../../lib/exercises'
 import { evaluateSentence } from '../../lib/api'
 import { speak } from '../../lib/audio'
+import { PixelIcon } from '../PixelIcon'
 
 export interface ProduceResult {
   usedHint: boolean
@@ -48,16 +49,16 @@ export default function PhaseProduce({
     <motion.div
       key={word.id}
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+      transition={{ duration: 0.2, ease: [0.6, 0, 0.4, 1] }}
       className={`card space-y-4 ${feedback && !feedback.ok ? 'shake border-2 border-coral' : ''}`}
     >
       {mode === 'review' ? (
         // Review = uji ingatan: sembunyikan kata Inggris, beri arti sebagai petunjuk.
-        <p className="text-sm font-semibold text-slate-400">
+        <p className="text-sm font-semibold muted">
           Ingat kata Inggrisnya: <span className="text-brand">{word.translation_id}</span>
         </p>
       ) : (
-        <p className="text-sm font-semibold text-slate-400">
+        <p className="text-sm font-semibold muted">
           Kata target: <span className="text-brand">{word.text}</span> · {word.translation_id}
         </p>
       )}
@@ -68,9 +69,9 @@ export default function PhaseProduce({
 
       {success && (
         <div className="space-y-3 rounded-xl bg-success/10 p-3">
-          <p className="font-semibold text-success">✅ Mantap, kalimatmu tepat!</p>
-          <button onClick={() => speak(success.sentence)} className="font-semibold text-brand">🔊 {success.sentence}</button>
-          {success.arti && <p className="text-sm text-slate-500 dark:text-slate-400">Artinya: {success.arti}</p>}
+          <p className="flex items-center gap-2 font-semibold text-success"><PixelIcon name="check" size={18} /> Mantap, kalimatmu tepat</p>
+          <button onClick={() => speak(success.sentence)} className="flex items-center gap-2 font-semibold text-brand"><PixelIcon name="speaker" size={16} /> {success.sentence}</button>
+          {success.arti && <p className="text-sm muted">Artinya: {success.arti}</p>}
           <button onClick={() => pass(success.sentence, false)} className="btn-primary mt-1">Lanjut</button>
         </div>
       )}
@@ -79,12 +80,12 @@ export default function PhaseProduce({
         <div className="space-y-3">
           <p className="rounded-xl bg-coral/10 p-3 text-coral">{feedback.msg}</p>
           {feedback.arti && (
-            <p className="text-sm text-slate-500 dark:text-slate-400">Arti kalimat yang benar: {feedback.arti}</p>
+            <p className="text-sm muted">Arti kalimat yang benar: {feedback.arti}</p>
           )}
           {revealed ? (
             <div className="rounded-xl bg-black/5 p-3 dark:bg-white/5">
-              <button onClick={() => speak(example)} className="font-semibold text-brand">🔊 {example}</button>
-              <p className="text-sm text-slate-500 dark:text-slate-400">{word.example_id}</p>
+              <button onClick={() => speak(example)} className="flex items-center gap-2 font-semibold text-brand"><PixelIcon name="speaker" size={16} /> {example}</button>
+              <p className="text-sm muted">{word.example_id}</p>
               <button onClick={() => pass(example, true)} className="btn-primary mt-3">Lanjut</button>
             </div>
           ) : (
@@ -111,7 +112,7 @@ function BlankExercise({ word, onWrong, onRight, disabled }: {
     <div className="space-y-3">
       <p className="text-lg">Isi bagian kosong dengan kata Inggris yang tepat:</p>
       <p className="text-xl font-bold">{display}</p>
-      <p className="text-sm text-slate-400">Petunjuk: artinya “{word.translation_id}” · {answer.length} huruf</p>
+      <p className="text-sm muted">Petunjuk: artinya “{word.translation_id}” · {answer.length} huruf</p>
       <input
         value={val} disabled={disabled} onChange={(e) => setVal(e.target.value)}
         placeholder="ketik kata…"
@@ -139,15 +140,15 @@ function ArrangeExercise({ example, onWrong, onRight, disabled }: {
   return (
     <div className="space-y-3">
       <p className="text-lg">Susun jadi kalimat yang benar:</p>
-      <div className="min-h-12 rounded-xl border border-dashed border-black/15 p-3 text-lg dark:border-white/20">
-        {answer || <span className="text-slate-400">ketuk kata di bawah…</span>}
+      <div className="min-h-12 border-[3px] border-dashed border-ink/30 p-3 text-lg dark:border-white/20">
+        {answer || <span className="muted">ketuk kata di bawah…</span>}
       </div>
       <div className="flex flex-wrap gap-2">
         {chips.map((c, i) => (
           <button
             key={i} disabled={disabled || pickedSet.has(i)}
             onClick={() => setPicked([...picked, i])}
-            className={`rounded-full px-4 py-2 font-semibold ${pickedSet.has(i) ? 'bg-black/5 text-slate-300 dark:bg-white/5' : 'bg-brand/10 text-brand'}`}
+            className={`border-[3px] px-4 py-2 font-semibold transition-all duration-75 ease-soft active:translate-x-0.5 active:translate-y-0.5 active:shadow-none ${pickedSet.has(i) ? 'border-ink/20 bg-black/5 text-slate-300 dark:border-white/10 dark:bg-white/5' : 'border-ink bg-brand/15 text-brand shadow-pixel-sm dark:border-white/25 dark:shadow-[2px_2px_0_0_#020617]'}`}
           >{c}</button>
         ))}
       </div>
@@ -180,7 +181,7 @@ function FreeExercise({ word, onWrong, onRight, disabled }: {
       if (ev.benar && ev.pakaiKataTarget) onRight(val, ev.bonusTense, ev.kalimatKoreksi || undefined, ev.artiKalimatId)
       else onWrong(val, ev.penjelasanId || 'Belum tepat, tapi usahamu bagus! Coba perbaiki sedikit.', ev.artiKalimatId)
     } catch {
-      onWrong(val, 'Koneksi bermasalah. Cek internet lalu coba lagi ya. 🙂')
+      onWrong(val, 'Koneksi bermasalah. Cek internet lalu coba lagi ya.')
     } finally {
       setBusy(false)
     }

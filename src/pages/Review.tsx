@@ -4,6 +4,7 @@ import { fetchDueCards, todayIn } from '../lib/api'
 import { useAuth } from '../store/auth'
 import SessionRunner, { type SessionItem } from '../components/session/SessionRunner'
 import { ListSkeleton } from '../components/Skeleton'
+import { PixelIcon } from '../components/PixelIcon'
 
 export default function Review() {
   const profile = useAuth((s) => s.profile)
@@ -24,9 +25,9 @@ export default function Review() {
 function Empty() {
   return (
     <div className="animate-fade-up flex flex-col items-center gap-3 py-16 text-center">
-      <div className="text-5xl">🎉</div>
+      <PixelIcon name="party" size={64} className="animate-bob" />
       <h1 className="text-xl font-extrabold">Tidak ada review hari ini!</h1>
-      <p className="text-slate-500 dark:text-slate-400">Ingatanmu masih segar. Pelajari kata baru, yuk.</p>
+      <p className="muted">Ingatanmu masih segar. Pelajari kata baru, yuk.</p>
       <Link to="/belajar" className="btn-primary mt-2 block text-center">Belajar kata baru</Link>
     </div>
   )

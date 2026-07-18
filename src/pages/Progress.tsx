@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../store/auth'
 import { fetchProgressByWeek, type WeekProgress } from '../lib/api'
 import { Skeleton } from '../components/Skeleton'
+import { PixelIcon, type PixelIconName } from '../components/PixelIcon'
+import ReviewForecast from '../components/ReviewForecast'
 
 const MILESTONES = [
   { at: 10, label: 'Kata pertama dikuasai — awal yang bagus!' },
@@ -32,17 +34,17 @@ export default function Progress() {
       <h1 className="text-2xl font-extrabold">Progres</h1>
 
       <div className="card text-center">
-        <p className="tnum text-5xl font-extrabold text-brand">{mastered}</p>
-        <p className="text-slate-500 dark:text-slate-400">kata dikuasai</p>
-        <div className="mt-4 h-3 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
-          <div className="h-full rounded-full bg-brand transition-[width] duration-500 ease-soft" style={{ width: `${pct}%` }} />
+        <p className="pixel-title tnum text-4xl text-brand">{mastered}</p>
+        <p className="muted">kata dikuasai</p>
+        <div className="bar mt-4">
+          <div className="h-full bg-brand transition-[width] duration-500 ease-pixel" style={{ width: `${pct}%` }} />
         </div>
-        <p className="tnum mt-2 text-sm text-slate-400">{pct}% dari 500 kata paling sering · perkiraan level {level}</p>
+        <p className="tnum mt-2 text-sm muted">{pct}% dari 500 kata paling sering · perkiraan level {level}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Stat icon="⭐" value={profile.xp} label="Total XP" />
-        <Stat icon="🔥" value={profile.streak_days} label="Streak (hari)" />
+        <Stat icon="star" value={profile.xp} label="Total XP" />
+        <Stat icon="fire" value={profile.streak_days} label="Streak (hari)" anim="animate-flicker" />
       </div>
 
       {/* Progres per minggu — bar horizontal, satu warna (dikuasai/total) */}
@@ -53,11 +55,13 @@ export default function Progress() {
             {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-9 w-full" />)}
           </div>
         ) : weeks.length === 0 ? (
-          <p className="text-sm text-slate-400">Belum ada data. Mulai belajar dulu, yuk!</p>
+          <p className="text-sm muted">Belum ada data. Mulai belajar dulu, yuk!</p>
         ) : (
           weeks.map((w) => <WeekBar key={w.week} w={w} />)
         )}
       </div>
+
+      <ReviewForecast />
 
       <div className="card space-y-3">
         <h2 className="font-bold">Milestone</h2>
@@ -65,7 +69,7 @@ export default function Progress() {
           const done = mastered >= m.at
           return (
             <div key={m.at} className={`flex items-center gap-3 ${done ? '' : 'opacity-50'}`}>
-              <span className="text-xl">{done ? '✅' : '⬜'}</span>
+              <PixelIcon name={done ? 'check' : 'box'} size={20} />
               <span className={done ? 'font-semibold' : ''}>{m.label}</span>
             </div>
           )
@@ -81,28 +85,28 @@ function WeekBar({ w }: { w: WeekProgress }) {
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between gap-2 text-sm">
-        <span className="font-semibold">Minggu {w.week} · <span className="text-slate-400">{WEEK_THEME[w.week] ?? ''}</span></span>
-        <span className="tnum whitespace-nowrap text-slate-400">
+        <span className="font-semibold">Minggu {w.week} · <span className="muted">{WEEK_THEME[w.week] ?? ''}</span></span>
+        <span className="tnum whitespace-nowrap muted">
           <span className="text-brand">{w.mastered} dikuasai</span>
           {w.learning > 0 && <> · <span className="text-accent">{w.learning} dipelajari</span></>}
           {' '}/ {w.total}
         </span>
       </div>
       {/* track resesif; segmen dikuasai (brand) + sedang dipelajari (amber), gap 2px */}
-      <div className="flex h-3 gap-0.5 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
-        <div className="h-full rounded-full bg-brand transition-[width] duration-500 ease-soft" style={{ width: `${masteredPct}%` }} />
-        <div className="h-full rounded-full bg-accent/70 transition-[width] duration-500 ease-soft" style={{ width: `${learningPct}%` }} />
+      <div className="bar flex gap-0.5">
+        <div className="h-full bg-brand transition-[width] duration-500 ease-pixel" style={{ width: `${masteredPct}%` }} />
+        <div className="h-full bg-accent/70 transition-[width] duration-500 ease-pixel" style={{ width: `${learningPct}%` }} />
       </div>
     </div>
   )
 }
 
-function Stat({ icon, value, label }: { icon: string; value: number; label: string }) {
+function Stat({ icon, value, label, anim = '' }: { icon: PixelIconName; value: number; label: string; anim?: string }) {
   return (
     <div className="tile flex flex-col items-center gap-1">
-      <span className="text-2xl">{icon}</span>
-      <span className="tnum text-lg font-bold">{value}</span>
-      <span className="text-xs text-slate-400">{label}</span>
+      <PixelIcon name={icon} size={28} className={anim} />
+      <span className="tnum font-pixel text-[10px] leading-relaxed">{value}</span>
+      <span className="text-xs muted">{label}</span>
     </div>
   )
 }

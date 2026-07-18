@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Word, ReviewCard } from '../../lib/types'
 import { levelForWeek } from '../../lib/exercises'
@@ -8,6 +8,8 @@ import {
 } from '../../lib/api'
 import { useAuth } from '../../store/auth'
 import { celebrate, celebrateMastered } from '../../lib/celebrate'
+import { suppressMusic, releaseMusic } from '../../lib/music'
+import { PixelIcon } from '../PixelIcon'
 import PhaseRecognize from './PhaseRecognize'
 import PhaseProduce, { type ProduceResult } from './PhaseProduce'
 
@@ -22,9 +24,18 @@ export default function SessionRunner({ items, mode }: { items: SessionItem[]; m
   const [i, setI] = useState(0)
   const [phase, setPhase] = useState<'recognize' | 'produce'>(mode === 'learn' ? 'recognize' : 'produce')
   const [xpGained, setXpGained] = useState(0)
+  const done = i >= items.length
+
+  // Saat latihan berjalan musik latar senyap — tersisa SFX & bunyi ketikan,
+  // supaya konsentrasi tidak terbagi. Musik kembali di layar ringkasan.
+  useEffect(() => {
+    if (done) releaseMusic()
+    else suppressMusic()
+    return releaseMusic
+  }, [done])
 
   if (!session || !profile) return null
-  if (i >= items.length) return <Summary xp={xpGained} count={items.length} />
+  if (done) return <Summary xp={xpGained} count={items.length} />
 
   const { word, prev } = items[i]
   const today = todayIn(profile.timezone)
@@ -68,10 +79,10 @@ export default function SessionRunner({ items, mode }: { items: SessionItem[]; m
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <div className="h-2 flex-1 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
-          <div className="h-full rounded-full bg-brand transition-[width] duration-500 ease-soft" style={{ width: `${(i / items.length) * 100}%` }} />
+        <div className="bar flex-1">
+          <div className="h-full bg-brand transition-[width] duration-500 ease-pixel" style={{ width: `${(i / items.length) * 100}%` }} />
         </div>
-        <span className="tnum text-sm text-slate-400">{i + 1}/{items.length}</span>
+        <span className="tnum text-sm muted">{i + 1}/{items.length}</span>
       </div>
 
       {phase === 'recognize'
@@ -84,9 +95,9 @@ export default function SessionRunner({ items, mode }: { items: SessionItem[]; m
 function Summary({ xp, count }: { xp: number; count: number }) {
   return (
     <div className="card space-y-4 text-center">
-      <div className="text-5xl">🎉</div>
+      <div className="flex justify-center"><PixelIcon name="party" size={64} className="animate-bob" /></div>
       <h2 className="text-2xl font-extrabold">Sesi selesai!</h2>
-      <p className="tnum text-slate-500 dark:text-slate-400">{count} kata dilatih · +{xp} XP</p>
+      <p className="tnum muted">{count} kata dilatih · +{xp} XP</p>
       <Link to="/dashboard" className="btn-primary block text-center">Kembali ke Beranda</Link>
     </div>
   )

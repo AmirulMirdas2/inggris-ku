@@ -14,7 +14,9 @@ export interface SrsResult extends SrsState {
 
 const DEFAULT: SrsState = { ease_factor: 2.5, interval_days: 0, repetitions: 0 }
 
-function addDays(iso: string, days: number): string {
+/** Geser tanggal ISO (YYYY-MM-DD) sejumlah hari. Parsing UTC supaya tidak
+ *  bergeser sehari di zona waktu manapun. */
+export function addDays(iso: string, days: number): string {
   const d = new Date(iso + 'T00:00:00Z')
   d.setUTCDate(d.getUTCDate() + days)
   return d.toISOString().slice(0, 10)
@@ -45,4 +47,27 @@ export function schedule(prev: SrsState = DEFAULT, q: number, today: string): Sr
 export function qualityFrom(correct: boolean, usedHint: boolean): number {
   if (!correct) return 1
   return usedHint ? 3 : 5
+}
+
+export interface ForecastBuckets {
+  overdue: number
+  days: { date: string; count: number }[]
+  beyond: number
+}
+
+/** Kelompokkan tanggal jatuh tempo jadi: terlambat / per-hari dalam rentang /
+ *  di luar rentang. Murni supaya bisa diuji tanpa jaringan — salah hitung di
+ *  sini tidak akan terlihat di layar, cuma angkanya diam-diam keliru. */
+export function bucketDueDates(dueDates: string[], today: string, span: number): ForecastBuckets {
+  const days = Array.from({ length: span }, (_, i) => ({ date: addDays(today, i), count: 0 }))
+  const index = new Map(days.map((d, i) => [d.date, i]))
+  let overdue = 0
+  let beyond = 0
+  for (const due of dueDates) {
+    // Format YYYY-MM-DD berurut secara leksikografis, jadi '<' aman.
+    if (due < today) overdue++
+    else if (index.has(due)) days[index.get(due)!].count++
+    else beyond++
+  }
+  return { overdue, days, beyond }
 }

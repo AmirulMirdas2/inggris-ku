@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import { applyStoredTheme } from './store/theme'
-import './lib/spotlight'
+import './lib/clickfx'
 import './index.css'
 
 applyStoredTheme()

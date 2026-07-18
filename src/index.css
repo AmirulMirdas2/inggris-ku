@@ -7,137 +7,208 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    @apply bg-cream text-slate-800 antialiased;
+    @apply bg-cream text-slate-800;
     @apply dark:bg-slate-900 dark:text-slate-100;
-    font-feature-settings: 'cv11';
+    /* Pixel art: JANGAN antialias — piksel harus tajam. */
+    -webkit-font-smoothing: none;
+    image-rendering: pixelated;
+  }
+  /* Judul kena text-shadow keras seperti teks judul game 8-bit. */
+  h1, h2 {
+    text-shadow: 2px 2px 0 rgba(29, 43, 83, 0.18);
+  }
+  .dark h1, .dark h2 {
+    text-shadow: 2px 2px 0 rgba(20, 30, 60, 0.9);
+  }
+  ::selection {
+    @apply bg-brand text-ink;
   }
 
-  /* Latar ambient: glow lembut brand+amber (bukan AI-purple), di belakang konten.
-     inset -10% + drift pelan agar tepi gradient tak pernah tersingkap. */
+  /* LAPIS 1 (paling belakang) — parallax: bintang piksel di mode gelap,
+     awan piksel di mode terang. Bergerak menyamping sangat pelan. */
+  html::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -3;
+    pointer-events: none;
+    opacity: 0.35;
+    background-repeat: repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='140'%3E%3Cg fill='%23ffffff'%3E%3Crect x='30' y='24' width='6' height='6'/%3E%3Crect x='24' y='30' width='18' height='6'/%3E%3Crect x='30' y='36' width='6' height='6'/%3E%3Crect x='120' y='70' width='6' height='6'/%3E%3Crect x='114' y='76' width='18' height='6'/%3E%3Crect x='120' y='82' width='6' height='6'/%3E%3Crect x='170' y='16' width='24' height='6'/%3E%3Crect x='70' y='110' width='24' height='6'/%3E%3C/g%3E%3C/svg%3E");
+    animation: drift 90s linear infinite;
+  }
+  html.dark::before {
+    opacity: 0.55;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cg fill='%23FFF1E8'%3E%3Crect x='20' y='30' width='3' height='3'/%3E%3Crect x='90' y='16' width='3' height='3'/%3E%3Crect x='150' y='60' width='3' height='3'/%3E%3Crect x='48' y='96' width='3' height='3'/%3E%3Crect x='120' y='130' width='3' height='3'/%3E%3Crect x='168' y='150' width='3' height='3'/%3E%3Crect x='8' y='158' width='3' height='3'/%3E%3C/g%3E%3Cg fill='%2329ADFF'%3E%3Crect x='64' y='64' width='3' height='3'/%3E%3Crect x='134' y='104' width='3' height='3'/%3E%3C/g%3E%3Cg fill='%23FFEC27'%3E%3Crect x='106' y='44' width='3' height='3'/%3E%3Crect x='30' y='120' width='3' height='3'/%3E%3C/g%3E%3C/svg%3E");
+    animation: drift 140s linear infinite, twinkle 4s steps(2, end) infinite;
+  }
+
+  /* LAPIS 2 — grid CRT + glow brand samar. */
   body::before {
     content: '';
     position: fixed;
-    inset: -10%;
+    inset: 0;
     z-index: -2;
     pointer-events: none;
-    background:
-      radial-gradient(42rem 42rem at 12% -8%, rgba(29, 158, 117, 0.10), transparent 60%),
-      radial-gradient(38rem 38rem at 98% 8%, rgba(239, 159, 39, 0.08), transparent 55%),
-      radial-gradient(46rem 46rem at 50% 115%, rgba(29, 158, 117, 0.07), transparent 60%);
-    animation: glow-drift 26s ease-in-out infinite alternate;
+    background-image:
+      linear-gradient(rgba(0, 196, 106, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 196, 106, 0.05) 1px, transparent 1px),
+      radial-gradient(40rem 40rem at 50% -10%, rgba(0, 196, 106, 0.08), transparent 70%);
+    background-size: 32px 32px, 32px 32px, 100% 100%;
+    animation: grid-scroll 8s linear infinite;
   }
   .dark body::before {
-    background:
-      radial-gradient(42rem 42rem at 12% -8%, rgba(29, 158, 117, 0.20), transparent 60%),
-      radial-gradient(38rem 38rem at 98% 8%, rgba(239, 159, 39, 0.12), transparent 55%),
-      radial-gradient(46rem 46rem at 50% 115%, rgba(29, 158, 117, 0.14), transparent 60%);
+    background-image:
+      linear-gradient(rgba(0, 228, 54, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 228, 54, 0.06) 1px, transparent 1px),
+      radial-gradient(40rem 40rem at 50% -10%, rgba(0, 228, 54, 0.10), transparent 70%);
   }
-  /* Grain halus: pecahkan kerataan digital, di atas glow tapi di bawah konten */
+
+  /* LAPIS 3 — scanline CRT tipis, tepat di bawah konten. */
   body::after {
     content: '';
     position: fixed;
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    opacity: 0.035;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background: repeating-linear-gradient(to bottom, rgba(29, 43, 83, 0.03) 0 2px, transparent 2px 4px);
   }
-  .dark body::after { opacity: 0.06; }
+  .dark body::after {
+    background: repeating-linear-gradient(to bottom, rgba(10, 16, 34, 0.25) 0 2px, transparent 2px 4px);
+  }
 }
 
-@keyframes glow-drift {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(1.5%, 1%, 0) scale(1.04); }
+@keyframes grid-scroll {
+  to { background-position: 0 32px, 32px 0, 0 0; }
+}
+@keyframes drift {
+  to { background-position: 600px 0; }
+}
+@keyframes twinkle {
+  50% { opacity: 0.45; }
 }
 
 @layer components {
-  /* Kartu belajar: sudut membulat, spasi lega, hairline halus + bayangan ber-tint */
+  /* Kartu = kotak sprite: garis tebal + bayangan keras tanpa blur. */
   .card {
-    @apply relative rounded-card bg-white dark:bg-slate-800 shadow-card p-6
-           border border-black/[0.04] dark:border-white/[0.06];
+    @apply relative bg-white dark:bg-slate-800 p-6
+           border-[3px] border-ink dark:border-white/25
+           shadow-card dark:shadow-[4px_4px_0_0_#00E436]
+           transition-[transform,box-shadow] duration-100 ease-soft;
   }
-  /* Spotlight border: garis kartu menyala mengikuti kursor (di-set via lib/spotlight).
-     Mask exclude → hanya cincin 1px yang tampak, konten kartu tak tersentuh. */
-  .card::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.35s ease;
-    background: radial-gradient(12rem 12rem at var(--spot-x, 50%) var(--spot-y, 50%), rgba(29, 158, 117, 0.55), transparent 60%);
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
+  .card:hover {
+    @apply -translate-x-0.5 -translate-y-0.5
+           shadow-[6px_6px_0_0_#1D2B53] dark:shadow-[6px_6px_0_0_#00E436];
   }
-  .card:hover::after { opacity: 1; }
-  /* Tombol pill lebar — satu aksi utama per layar */
+  /* Tombol arcade: naik saat hover, benar-benar TURUN ke bayangannya saat
+     ditekan. Tidak ada brightness/gradient — kilap itu yang bikin terasa slop. */
   .btn-primary {
-    @apply w-full rounded-full bg-brand px-6 py-4 text-lg font-bold text-white
-           transition duration-200 ease-soft active:scale-[0.98] hover:brightness-105
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:ring-offset-2 focus-visible:ring-offset-cream dark:focus-visible:ring-offset-slate-900
+    @apply w-full bg-brand px-5 py-4 font-pixel text-[11px] leading-relaxed text-ink
+           border-[3px] border-ink shadow-pixel dark:shadow-[4px_4px_0_0_#141E3C]
+           transition-all duration-75 ease-soft
+           hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-lime
+           hover:shadow-[6px_6px_0_0_#1D2B53] dark:hover:shadow-[6px_6px_0_0_#141E3C]
+           active:translate-x-1 active:translate-y-1 active:shadow-none
+           focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-accent
            disabled:opacity-50 disabled:pointer-events-none;
   }
   .btn-ghost {
-    @apply w-full rounded-full px-6 py-4 text-lg font-semibold
-           text-brand border-2 border-brand/30 transition duration-200 ease-soft active:scale-[0.98]
-           hover:border-brand/60
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-cream dark:focus-visible:ring-offset-slate-900;
+    @apply w-full bg-white dark:bg-slate-800 px-5 py-4 font-pixel text-[11px] leading-relaxed text-brand
+           border-[3px] border-ink dark:border-white/25 shadow-pixel dark:shadow-[4px_4px_0_0_#141E3C]
+           transition-all duration-75 ease-soft
+           hover:-translate-x-0.5 hover:-translate-y-0.5 hover:bg-brand/15
+           hover:shadow-[6px_6px_0_0_#1D2B53] dark:hover:shadow-[6px_6px_0_0_#141E3C]
+           active:translate-x-1 active:translate-y-1 active:shadow-none
+           focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-accent;
   }
-  /* Input/textarea: satu gaya untuk semua field, focus jelas & aksesibel */
+  /* Input: kotak tenggelam — bayangan keras di DALAM, bukan di luar. */
   .input {
-    @apply w-full rounded-xl border border-black/10 bg-transparent px-4 py-3 text-lg
-           outline-none transition duration-200 ease-soft placeholder:text-slate-400
-           focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/25
-           dark:border-white/15;
+    @apply w-full border-[3px] border-ink dark:border-white/25 bg-white dark:bg-slate-900 px-4 py-3 text-lg
+           shadow-[inset_3px_3px_0_0_rgba(29,43,83,0.12)] dark:shadow-[inset_3px_3px_0_0_rgba(10,16,34,0.5)]
+           outline-none transition-colors duration-75 ease-soft placeholder:text-slate-500 dark:placeholder:text-slate-300
+           focus:border-brand focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-accent;
   }
-  /* Tile ringan (stat/metrik) — surface datar, bukan kartu melayang */
-  .tile {
-    @apply rounded-2xl bg-black/[0.03] dark:bg-white/[0.04]
-           border border-black/[0.04] dark:border-white/[0.06] p-4;
-  }
-  /* Kontrol kompak (input time, select) — versi kecil dari .input */
   .input-sm {
-    @apply rounded-lg border border-black/10 bg-transparent px-3 py-2
-           outline-none transition duration-200 ease-soft
-           focus:border-brand focus-visible:ring-2 focus-visible:ring-brand/25
-           dark:border-white/15;
+    @apply border-[3px] border-ink dark:border-white/25 bg-white dark:bg-slate-900 px-3 py-2
+           outline-none transition-colors duration-75 ease-soft
+           focus:border-brand focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-accent;
   }
-  /* Skeleton loader: blok abu berdenyut-kilau, ganti teks "Memuat…" */
-  .skeleton {
-    @apply relative overflow-hidden rounded-lg bg-black/[0.06] dark:bg-white/[0.08];
+  /* Tile stat: permukaan PADAT. Sebelumnya bg-black/[0.03] alias tembus
+     pandang — grid & scanline latar ikut terlihat di belakang teks, dan itu
+     yang bikin tulisan terasa "nabrak", bukan sekadar warnanya. */
+  .tile {
+    @apply bg-white dark:bg-slate-800 p-4
+           border-[3px] border-ink dark:border-white/25
+           shadow-pixel-sm dark:shadow-[2px_2px_0_0_#141E3C];
   }
-  .skeleton::after {
+  /* Bar EXP ala RPG: track bergaris tebal + takik segmen tiap 8px,
+     isi bertambah per-langkah (ease-pixel) bukan mengalir halus. */
+  .bar {
+    @apply relative h-4 overflow-hidden border-[3px] border-ink bg-slate-200
+           dark:border-white/25 dark:bg-slate-950;
+  }
+  .bar::after {
     content: '';
-    @apply absolute inset-0;
-    transform: translateX(-100%);
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
-    animation: shimmer 1.4s infinite;
+    @apply pointer-events-none absolute inset-0;
+    background: repeating-linear-gradient(90deg, transparent 0 6px, rgba(29, 43, 83, 0.3) 6px 8px);
   }
-  .dark .skeleton::after {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+  /* Skeleton: blok padat berkedip (bukan shimmer halus — itu bukan 8-bit). */
+  .skeleton {
+    @apply border-[3px] border-ink/30 bg-black/[0.08] dark:border-white/15 dark:bg-white/[0.08]
+           animate-blink;
   }
-  /* Angka data (skor, XP, counter) sejajar rapi */
-  .tnum { font-variant-numeric: tabular-nums; }
+  /* Teks sekunder (keterangan, hint, satuan). SATU kelas untuk semua, karena
+     tidak ada satu abu-abu pun yang lolos kontras 4.5:1 di kedua mode
+     sekaligus — terang butuh yang gelap, gelap butuh yang terang.
+     Dinaikkan ke 7.05:1 (cream) & 7.83:1 (navy) — AA butuh 4.5:1, tapi teks
+     ini kecil DAN latarnya bergrid, jadi ambang minimum tidak cukup. */
+  .muted {
+    @apply text-slate-600 dark:text-slate-200;
+  }
+  /* Angka data (skor, XP, counter) — font arcade, lebar sama rata. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Judul/angka besar yang layak pakai font arcade. */
+  .pixel-title {
+    @apply font-pixel;
+    text-shadow: 3px 3px 0 rgba(29, 43, 83, 0.25);
+  }
+  .dark .pixel-title {
+    text-shadow: 3px 3px 0 rgba(20, 30, 60, 0.9);
+  }
 }
 
-/* Mikro-interaksi salah: shake halus (dipakai lewat class .shake) */
+/* Efek klik: kotak piksel melebar di titik kursor (dipasang lib/clickfx.ts). */
+.click-fx {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 3px solid #00C46A;
+  animation: click-pop 0.3s steps(4, end) forwards;
+}
+@keyframes click-pop {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(4); opacity: 0; }
+}
+
+/* Mikro-interaksi salah: getar per-frame, bukan gerak halus. */
 @keyframes shake {
-  10%, 90% { transform: translateX(-1px); }
-  20%, 80% { transform: translateX(2px); }
-  30%, 50%, 70% { transform: translateX(-4px); }
-  40%, 60% { transform: translateX(4px); }
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
 }
-.shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-
-@keyframes shimmer { 100% { transform: translateX(100%); } }
+.shake { animation: shake 0.24s steps(1, end) 2; }
 
 /* Aksesibilitas: hormati preferensi kurangi-gerak (skill: motion harus bisa dimatikan) */
 @media (prefers-reduced-motion: reduce) {
-  .shake, .animate-fade-up { animation: none !important; }
-  body::before, .skeleton::after { animation: none !important; }
+  .shake, .animate-fade-up, .skeleton, .click-fx,
+  .animate-bob, .animate-flicker { animation: none !important; }
+  body::before, html::before { animation: none !important; }
+  .card:hover, .btn-primary:hover, .btn-ghost:hover { transform: none !important; }
   * { scroll-behavior: auto !important; }
 }

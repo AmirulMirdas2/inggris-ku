@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { schedule, type SrsState } from './srs'
+import { schedule, bucketDueDates, type SrsState } from './srs'
 import type { Word, ReviewCard, Profile, Evaluation } from './types'
 
 /** Tanggal lokal (YYYY-MM-DD) pada timezone pengguna. */
@@ -97,16 +97,18 @@ export async function fetchProgressByWeek(): Promise<WeekProgress[]> {
 export interface StudiedWord {
   text: string; translation_id: string; phonetic: string | null
   last_reviewed: string; status: 'learning' | 'mastered'
+  due_date: string; interval_days: number
 }
 
 /** Semua kata yang sudah dipelajari (learning + mastered), terbaru dulu. */
 export async function fetchStudiedWords(): Promise<StudiedWord[]> {
   const { data } = await supabase.from('review_cards')
-    .select('last_reviewed, status, word:words(text, translation_id, phonetic)')
+    .select('last_reviewed, status, due_date, interval_days, word:words(text, translation_id, phonetic)')
     .order('last_reviewed', { ascending: false })
   return (data ?? []).map((r: any) => ({
     text: r.word.text, translation_id: r.word.translation_id, phonetic: r.word.phonetic,
     last_reviewed: r.last_reviewed, status: r.status,
+    due_date: r.due_date, interval_days: r.interval_days,
   })).filter((w: StudiedWord) => w.last_reviewed)
 }
 
@@ -116,6 +118,24 @@ export async function advanceWeek(profile: Profile): Promise<Profile> {
   const { data } = await supabase.from('profiles')
     .update({ current_week }).eq('id', profile.id).select().single()
   return (data as Profile) ?? { ...profile, current_week }
+}
+
+export interface ForecastDay { date: string; count: number }
+export interface ReviewForecast {
+  overdue: number       // jatuh tempo sebelum hari ini — menumpuk, belum dikerjakan
+  days: ForecastDay[]   // hari ini + (span-1) hari ke depan
+  beyond: number        // dijadwalkan setelah rentang grafik
+  scheduled: number     // total kartu yang masih akan direview
+}
+
+/** Peramalan beban review. Kartu 'mastered' TIDAK dihitung: fetchDueCards
+ *  mengecualikannya, jadi kata yang sudah dikuasai memang tak pernah muncul
+ *  lagi — menampilkannya di jadwal akan jadi janji palsu. */
+export async function fetchReviewForecast(today: string, span = 14): Promise<ReviewForecast> {
+  const { data } = await supabase.from('review_cards')
+    .select('due_date').neq('status', 'mastered')
+  const dues = (data ?? []).map((r: any) => r.due_date as string)
+  return { ...bucketDueDates(dues, today, span), scheduled: dues.length }
 }
 
 // ---------- Riwayat & koreksi ----------

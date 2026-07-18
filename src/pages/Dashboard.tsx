@@ -4,12 +4,13 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../store/auth'
 import { fetchDueCards, todayIn } from '../lib/api'
 import { Skeleton } from '../components/Skeleton'
+import { PixelIcon, type PixelIconName } from '../components/PixelIcon'
 
 // Masuk berjenjang: tiap blok naik-fade sedikit demi sedikit.
 const container = { show: { transition: { staggerChildren: 0.06 } } }
 const item = {
   hidden: { opacity: 0, y: 10 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 24 } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: [0.6, 0, 0.4, 1] } },
 } as const
 
 const NEXT_MILESTONE = [
@@ -50,14 +51,14 @@ export default function Dashboard() {
   return (
     <motion.div className="space-y-6" variants={container} initial="hidden" animate="show">
       <motion.div variants={item}>
-        <h1 className="text-2xl font-extrabold">Halo, {profile.display_name} <span aria-hidden>👋</span></h1>
-        <p className="text-slate-500 dark:text-slate-400">Siap belajar hari ini?</p>
+        <h1 className="flex items-center gap-2 text-2xl font-extrabold">Halo, {profile.display_name} <PixelIcon name="wave" size={24} /></h1>
+        <p className="muted">Siap belajar hari ini?</p>
       </motion.div>
 
       <motion.div className="grid grid-cols-3 gap-3" variants={item}>
-        <Stat label="Target" value={`${profile.daily_goal}`} icon="🎯" />
-        <Stat label="Streak" value={`${profile.streak_days} hari`} icon="🔥" />
-        <Stat label="XP" value={`${profile.xp}`} icon="⭐" />
+        <Stat label="Target" value={`${profile.daily_goal}`} icon="target" />
+        <Stat label="Streak" value={`${profile.streak_days} hari`} icon="fire" anim="animate-flicker" />
+        <Stat label="XP" value={`${profile.xp}`} icon="star" />
       </motion.div>
 
       <motion.div className="space-y-3" variants={item}>
@@ -66,23 +67,23 @@ export default function Dashboard() {
       </motion.div>
 
       <motion.div className="card" variants={item}>
-        <p className="text-sm font-semibold text-slate-400">Milestone berikutnya</p>
+        <p className="text-sm font-semibold muted">Milestone berikutnya</p>
         <p className="mt-1 text-lg font-bold">{next.label}</p>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
-          <div className="h-full rounded-full bg-accent transition-[width] duration-500 ease-soft" style={{ width: `${pct}%` }} />
+        <div className="bar mt-3">
+          <div className="h-full bg-accent transition-[width] duration-500 ease-pixel" style={{ width: `${pct}%` }} />
         </div>
-        <p className="tnum mt-1 text-xs text-slate-400">{profile.words_mastered}/{next.at} kata</p>
+        <p className="tnum mt-1 text-xs muted">{profile.words_mastered}/{next.at} kata</p>
       </motion.div>
     </motion.div>
   )
 }
 
-function Stat({ label, value, icon }: { label: string; value: string; icon: string }) {
+function Stat({ label, value, icon, anim = '' }: { label: string; value: string; icon: PixelIconName; anim?: string }) {
   return (
     <div className="tile flex flex-col items-center gap-1">
-      <span className="text-2xl">{icon}</span>
-      <span className="tnum text-lg font-bold">{value}</span>
-      <span className="text-xs text-slate-400">{label}</span>
+      <PixelIcon name={icon} size={28} className={anim} />
+      <span className="tnum font-pixel text-[10px] leading-relaxed">{value}</span>
+      <span className="text-xs muted">{label}</span>
     </div>
   )
 }

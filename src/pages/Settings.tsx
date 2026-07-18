@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../store/auth'
 import type { Profile } from '../lib/types'
 import { getTtsRate, setTtsRate, speak } from '../lib/audio'
+import { sfxEnabled, setSfxEnabled, sfxCorrect } from '../lib/sfx'
+import { musicEnabled, setMusicEnabled } from '../lib/music'
+import { PixelIcon } from '../components/PixelIcon'
 
 const TIMEZONES = ['Asia/Jakarta', 'Asia/Makassar', 'Asia/Jayapura']
 
@@ -11,6 +14,8 @@ export default function Settings() {
   const { profile, setProfile, signOut } = useAuth()
   const nav = useNavigate()
   const [rate, setRate] = useState(getTtsRate())
+  const [sfx, setSfx] = useState(sfxEnabled())
+  const [music, setMusic] = useState(musicEnabled())
   const [saving, setSaving] = useState(false)
 
   if (!profile) return null
@@ -47,13 +52,20 @@ export default function Settings() {
             {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
           </select>
         </Row>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs muted">
           Email dikirim hanya bila ada kata yang jatuh tempo, maksimal sekali sehari.
         </p>
       </section>
 
       <section className="card space-y-4">
         <h2 className="font-bold">Audio</h2>
+        <Row label="Efek suara 8-bit">
+          <Toggle checked={sfx} onChange={(v) => { setSfx(v); setSfxEnabled(v); if (v) sfxCorrect() }} />
+        </Row>
+        <Row label="Musik latar retro">
+          <Toggle checked={music} onChange={(v) => { setMusic(v); setMusicEnabled(v) }} />
+        </Row>
+        <p className="text-xs muted">Musik otomatis berhenti selama sesi latihan.</p>
         <Row label="Kecepatan suara">
           <input
             type="range" min={0.5} max={1.2} step={0.1} value={rate}
@@ -62,14 +74,14 @@ export default function Settings() {
           />
         </Row>
         <button onClick={() => speak('Hello, how are you today?', rate)} className="btn-ghost">
-          🔊 Coba suara
+          <span className="inline-flex items-center gap-2"><PixelIcon name="speaker" size={16} /> Coba suara</span>
         </button>
       </section>
 
       <button onClick={() => { signOut(); nav('/masuk') }} className="btn-ghost text-coral">
         Keluar
       </button>
-      {saving && <p className="text-center text-xs text-slate-400">menyimpan…</p>}
+      {saving && <p className="text-center text-xs muted">menyimpan…</p>}
     </div>
   )
 }
@@ -87,10 +99,11 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   return (
     <button
       onClick={() => onChange(!checked)}
-      className={`h-7 w-12 rounded-full transition duration-200 ease-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-cream dark:focus-visible:ring-offset-slate-900 ${checked ? 'bg-brand' : 'bg-black/15 dark:bg-white/20'}`}
+      className={`h-8 w-14 border-[3px] border-ink p-0.5 transition-colors duration-75 ease-soft dark:border-white/25 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-accent ${checked ? 'bg-brand' : 'bg-black/15 dark:bg-white/20'}`}
       aria-pressed={checked}
     >
-      <span className={`block h-6 w-6 rounded-full bg-white shadow-sm transition duration-200 ease-soft ${checked ? 'translate-x-6' : 'translate-x-0.5'}`} />
+      {/* Knop geser per-langkah, seperti saklar sprite */}
+      <span className={`block h-full w-5 border-[2px] border-ink bg-white transition-transform duration-100 ease-soft ${checked ? 'translate-x-[26px]' : 'translate-x-0'}`} />
     </button>
   )
 }
