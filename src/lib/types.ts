@@ -45,6 +45,19 @@ export interface ReviewCard {
   status: CardStatus
 }
 
+// State belajar + SRS satu tense untuk satu pengguna (tabel tense_progress).
+export interface TenseProgress {
+  tense_key: string
+  correct_count: number
+  understood: boolean
+  ease_factor: number
+  interval_days: number
+  repetitions: number
+  due_date: string | null
+  last_reviewed: string | null
+  status: CardStatus
+}
+
 // Hasil penilaian kalimat dari Edge Function evaluate-sentence.
 export interface Evaluation {
   benar: boolean

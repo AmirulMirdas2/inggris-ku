@@ -1,11 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import type { Word } from '../../lib/types'
 import type { Level } from '../../lib/exercises'
 import { blankSentence, checkBlank, checkArrange, tokenize, shuffle } from '../../lib/exercises'
-import { evaluateSentence } from '../../lib/api'
+import { evaluateSentence, unlockedTenseKeys } from '../../lib/api'
 import { speak } from '../../lib/audio'
+import { tenseByKey, TENSES } from '../../lib/tenses'
 import { PixelIcon } from '../PixelIcon'
+
+// tense_focus kata (enum DB) → key materi tense untuk pilihan default.
+const FOCUS_TO_KEY: Record<string, string> = {
+  presentSimple: 'presentSimple', presentContinuous: 'presentContinuous',
+  pastSimple: 'pastSimple', future: 'futureSimple',
+}
 
 export interface ProduceResult {
   usedHint: boolean
@@ -173,13 +180,34 @@ function FreeExercise({ word, onWrong, onRight, disabled }: {
 }) {
   const [val, setVal] = useState('')
   const [busy, setBusy] = useState(false)
+  // Tense yang WAJIB dipakai kalimat. '' = bebas (tanpa syarat tense).
+  const [tenseKey, setTenseKey] = useState('')
+  const [unlocked, setUnlocked] = useState<string[]>([])
+
+  useEffect(() => {
+    unlockedTenseKeys().then((keys) => {
+      setUnlocked(keys)
+      // Default = tense tempat kata ini diajarkan, bila sudah terbuka.
+      const suggested = FOCUS_TO_KEY[word.tense_focus]
+      if (suggested && keys.includes(suggested)) setTenseKey(suggested)
+    })
+  }, [word])
+
+  const activeTense = tenseKey ? tenseByKey(tenseKey) : undefined
 
   async function check() {
     setBusy(true)
     try {
-      const ev = await evaluateSentence(word.text, word.tense_focus, val)
-      if (ev.benar && ev.pakaiKataTarget) onRight(val, ev.bonusTense, ev.kalimatKoreksi || undefined, ev.artiKalimatId)
-      else onWrong(val, ev.penjelasanId || 'Belum tepat, tapi usahamu bagus! Coba perbaiki sedikit.', ev.artiKalimatId)
+      const label = activeTense ? activeTense.aiLabel : word.tense_focus
+      const ev = await evaluateSentence(word.text, label, val)
+      const tenseOk = !activeTense || ev.sesuaiTenseTarget
+      if (ev.benar && ev.pakaiKataTarget && tenseOk) {
+        onRight(val, ev.bonusTense, ev.kalimatKoreksi || undefined, ev.artiKalimatId)
+      } else if (activeTense && ev.benar && ev.pakaiKataTarget && !ev.sesuaiTenseTarget) {
+        onWrong(val, `Kalimatmu benar, tapi ini ${ev.tenseDetected || 'tense lain'} — bukan ${activeTense.name}. Ubah ke pola: ${activeTense.formula}.`, ev.artiKalimatId)
+      } else {
+        onWrong(val, ev.penjelasanId || 'Belum tepat, tapi usahamu bagus! Coba perbaiki sedikit.', ev.artiKalimatId)
+      }
     } catch {
       onWrong(val, 'Koneksi bermasalah. Cek internet lalu coba lagi ya.')
     } finally {
@@ -190,6 +218,22 @@ function FreeExercise({ word, onWrong, onRight, disabled }: {
   return (
     <div className="space-y-3">
       <p className="text-lg">Buat kalimatmu sendiri pakai kata <b>{word.text}</b>:</p>
+      {unlocked.length > 0 && (
+        <label className="block text-sm">
+          <span className="font-semibold muted">Tense kalimat:</span>
+          <select
+            value={tenseKey} disabled={disabled}
+            onChange={(e) => setTenseKey(e.target.value)}
+            className="input input-sm mt-1"
+          >
+            <option value="">Bebas (semua tense)</option>
+            {TENSES.filter((t) => unlocked.includes(t.key)).map((t) => (
+              <option key={t.key} value={t.key}>{t.name}</option>
+            ))}
+          </select>
+        </label>
+      )}
+      {activeTense && <p className="text-xs muted">Pola: {activeTense.formula}</p>}
       <textarea
         value={val} disabled={disabled} onChange={(e) => setVal(e.target.value)} rows={2}
         placeholder="tulis kalimat bahasa Inggris…"

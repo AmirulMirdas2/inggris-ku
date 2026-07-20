@@ -66,6 +66,17 @@ export default function Dashboard() {
         <Link to="/review" className="btn-ghost block text-center">Review hari ini ({due})</Link>
       </motion.div>
 
+      <motion.div variants={item}>
+        <Link to="/tense" className="card flex items-center gap-3 !p-4">
+          <PixelIcon name="book" size={28} />
+          <div className="min-w-0 flex-1">
+            <p className="font-bold">Belajar Tense</p>
+            <p className="truncate text-sm muted">Pahami 16 tense — kapan pakai <i>will</i>, <i>have</i>, <i>-ing</i></p>
+          </div>
+          <span className="text-brand">→</span>
+        </Link>
+      </motion.div>
+
       <motion.div className="card" variants={item}>
         <p className="text-sm font-semibold muted">Milestone berikutnya</p>
         <p className="mt-1 text-lg font-bold">{next.label}</p>

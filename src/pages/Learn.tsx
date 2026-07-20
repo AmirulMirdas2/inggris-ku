@@ -50,6 +50,9 @@ function Empty({ week, onSkip }: { week: number; onSkip: () => void }) {
         <button onClick={onSkip} className="btn-ghost">
           Tidak sabar? Buka kata Minggu {week + 1} →
         </button>
+        <Link to="/tense" className="btn-ghost flex items-center justify-center gap-2">
+          <PixelIcon name="book" size={18} /> Belajar Tense sambil menunggu
+        </Link>
         <Link to="/kosakata" className="block text-center text-sm font-semibold text-brand">
           Lihat kosakata yang sudah kupelajari
         </Link>

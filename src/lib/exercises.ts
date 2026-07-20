@@ -41,6 +41,28 @@ export function shuffle<T>(arr: T[]): T[] {
   return out
 }
 
+// be-verb & kata bantu: bentuknya terkunci ke satu waktu (was=lampau, is=kini),
+// jadi tak pernah jadi target latihan tense yang adil.
+const BE_AUX = new Set([
+  'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being',
+  'has', 'have', 'had', 'do', 'does', 'did',
+  'will', 'would', 'shall', 'should', 'can', 'could', 'may', 'might', 'must',
+])
+
+/** Bisakah kata ini jadi target latihan tense APA PUN? Kata benda & sifat selalu
+ *  bisa (tak ikut berubah). Verba hanya bila bentuk DASAR: bukan be/kata bantu,
+ *  bukan terkonjugasi (-ing/-ed/-en), bukan bentuk lampau/continuous. Contoh
+ *  yang DITOLAK: "was", "going", "eaten" — mustahil dipakai lintas-tense. */
+export function isCrossTenseTarget(pos: string | null, text: string, tenseFocus?: string): boolean {
+  if (pos === 'noun' || pos === 'adjective') return true
+  if (pos !== 'verb') return false
+  const t = text.toLowerCase()
+  if (BE_AUX.has(t)) return false
+  if (/(ing|ed|en)$/.test(t)) return false
+  if (tenseFocus === 'presentContinuous' || tenseFocus === 'pastSimple') return false
+  return true
+}
+
 /** Cek Level 1: jawaban rumpang cocok dengan kata target. */
 export function checkBlank(input: string, answer: string): boolean {
   return normalize(input) === normalize(answer)

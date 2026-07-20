@@ -1,6 +1,8 @@
 import { supabase } from './supabase'
 import { schedule, bucketDueDates, type SrsState } from './srs'
-import type { Word, ReviewCard, Profile, Evaluation } from './types'
+import { MASTER_AT, TENSES, isUnlocked } from './tenses'
+import { isCrossTenseTarget } from './exercises'
+import type { Word, ReviewCard, Profile, Evaluation, TenseProgress } from './types'
 
 /** Tanggal lokal (YYYY-MM-DD) pada timezone pengguna. */
 export function todayIn(tz: string): string {
@@ -11,14 +13,31 @@ export function todayIn(tz: string): string {
 
 /** Kata baru: dalam minggu berjalan, belum punya kartu SRS. */
 export async function fetchNewWords(week: number, limit: number): Promise<Word[]> {
-  const { data: cards } = await supabase.from('review_cards').select('word_id')
-  const known = (cards ?? []).map((c) => c.word_id)
-  let q = supabase.from('words').select('*').lte('theme_week', week)
-    .order('theme_week').order('frequency_rank', { nullsFirst: false }).limit(limit)
-  if (known.length) q = q.not('id', 'in', `(${known.join(',')})`)
-  const { data, error } = await q
-  if (error) throw error
-  return (data ?? []) as Word[]
+  const run = async () => {
+    const { data: cards } = await supabase.from('review_cards').select('word_id')
+    const known = (cards ?? []).map((c) => c.word_id)
+    let q = supabase.from('words').select('*').lte('theme_week', week)
+      .order('theme_week').order('frequency_rank', { nullsFirst: false }).limit(limit)
+    if (known.length) q = q.not('id', 'in', `(${known.join(',')})`)
+    const { data, error } = await q
+    if (error) throw error
+    return (data ?? []) as Word[]
+  }
+
+  let words = await run()
+  // Minggu 6+ tidak di-seed manual. Bila belum ada satu pun kata untuk minggu itu,
+  // AI meng-generate lalu cache ke tabel words, baru diambil ulang. Sekali generate
+  // dipakai semua pengguna. Cek theme_week (bukan words.length) supaya tak generate
+  // ulang hanya karena pengguna ini sudah mengenal semuanya.
+  if (words.length === 0 && week >= 6) {
+    const { count } = await supabase.from('words')
+      .select('id', { count: 'exact', head: true }).eq('theme_week', week)
+    if (!count) {
+      await supabase.functions.invoke('generate-words', { body: { week } })
+      words = await run()
+    }
+  }
+  return words
 }
 
 /** Kartu jatuh tempo hari ini (belum mastered), dengan datanya. */
@@ -214,4 +233,103 @@ export async function evaluateSentence(word: string, tenseFocus: string, sentenc
   })
   if (error) throw error
   return data as Evaluation
+}
+
+// ---------- Belajar tense ----------
+
+export interface PoolWord { text: string; translation_id: string }
+
+/** Kata target latihan tense = kosakata yang SUDAH dipelajari user (punya kartu
+ *  SRS). Kata fungsi (the, a, is) dilewati — sulit jadi kalimat mandiri. Kosong
+ *  bila user belum belajar kata apa pun; TenseProduce menangani itu. */
+export async function fetchWordPool(limit = 60): Promise<PoolWord[]> {
+  const { data } = await supabase.from('review_cards')
+    .select('word:words(text, translation_id, part_of_speech, tense_focus)')
+    .order('last_reviewed', { ascending: false })
+    .limit(limit)
+  return (data ?? [])
+    .map((r: any) => r.word)
+    // Hanya kata yang bisa dipakai di tense mana pun (lihat isCrossTenseTarget):
+    // "was"/"going" ditolak karena bentuknya terkunci ke satu waktu.
+    .filter((w: any) => w && isCrossTenseTarget(w.part_of_speech, w.text, w.tense_focus))
+    .map((w: any) => ({ text: w.text, translation_id: w.translation_id })) as PoolWord[]
+}
+
+/** Progress semua tense pengguna, dipetakan per tense_key. */
+export async function fetchTenseProgress(): Promise<Record<string, TenseProgress>> {
+  const { data } = await supabase.from('tense_progress').select('*')
+  const map: Record<string, TenseProgress> = {}
+  for (const r of (data ?? []) as TenseProgress[]) map[r.tense_key] = r
+  return map
+}
+
+/** Tandai tahap "Kenali" lulus untuk satu tense. */
+export async function markTenseUnderstood(userId: string, tenseKey: string): Promise<void> {
+  const { error } = await supabase.from('tense_progress').upsert(
+    { user_id: userId, tense_key: tenseKey, understood: true },
+    { onConflict: 'user_id,tense_key' },
+  )
+  if (error) throw error
+}
+
+/** Catat satu kalimat produksi yang BENAR. Naikkan correct_count; saat menyentuh
+ *  MASTER_AT pertama kali → status 'mastered' + masuk SRS (due_date via schedule). */
+export async function recordTenseCorrect(userId: string, tenseKey: string, today: string): Promise<TenseProgress> {
+  const { data: cur } = await supabase.from('tense_progress').select('*')
+    .eq('user_id', userId).eq('tense_key', tenseKey).maybeSingle()
+  const prev = cur as TenseProgress | null
+  const correct_count = (prev?.correct_count ?? 0) + 1
+
+  // upsert parsial: hanya kolom yang disebut yang di-update, sisanya utuh.
+  const patch: Record<string, unknown> = {
+    user_id: userId, tense_key: tenseKey, correct_count, understood: true,
+  }
+  if (correct_count >= MASTER_AT && prev?.status !== 'mastered') {
+    const next = schedule(undefined, 5, today) // mulai jadwal SRS dari nol
+    patch.status = 'mastered'
+    patch.ease_factor = next.ease_factor
+    patch.interval_days = next.interval_days
+    patch.repetitions = next.repetitions
+    patch.due_date = next.due_date
+    patch.last_reviewed = new Date().toISOString()
+  }
+
+  const { data, error } = await supabase.from('tense_progress')
+    .upsert(patch, { onConflict: 'user_id,tense_key' }).select().single()
+  if (error) throw error
+  return data as TenseProgress
+}
+
+// Cache 1x per sesi: tense yang sudah terbuka, untuk pemilih tense di latihan
+// kosakata/review. Bisa basi bila user membuka tense baru di tengah sesi —
+// refresh membersihkannya (dampak kecil).
+let _unlocked: Promise<string[]> | null = null
+export function unlockedTenseKeys(): Promise<string[]> {
+  if (!_unlocked) {
+    _unlocked = fetchTenseProgress()
+      .then((m) => TENSES.filter((t) => isUnlocked(t.order, m)).map((t) => t.key))
+      .catch(() => ['presentSimple']) // minimal: tense pertama selalu terbuka
+  }
+  return _unlocked
+}
+
+/** Terapkan hasil review SRS satu tense (setelah mastered) → jadwalkan ulang. */
+export async function reviewTenseCard(userId: string, tenseKey: string, quality: number, today: string): Promise<void> {
+  const { data: cur } = await supabase.from('tense_progress').select('*')
+    .eq('user_id', userId).eq('tense_key', tenseKey).maybeSingle()
+  const prev = cur as TenseProgress | null
+  const prevState: SrsState | undefined = prev
+    ? { ease_factor: prev.ease_factor, interval_days: prev.interval_days, repetitions: prev.repetitions }
+    : undefined
+  const next = schedule(prevState, quality, today)
+  const { error } = await supabase.from('tense_progress').upsert(
+    {
+      user_id: userId, tense_key: tenseKey, status: 'mastered',
+      ease_factor: next.ease_factor, interval_days: next.interval_days,
+      repetitions: next.repetitions, due_date: next.due_date,
+      last_reviewed: new Date().toISOString(),
+    },
+    { onConflict: 'user_id,tense_key' },
+  )
+  if (error) throw error
 }
