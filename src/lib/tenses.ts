@@ -462,6 +462,15 @@ export const TENSES: TenseInfo[] = [
 
 export const tenseByKey = (key: string): TenseInfo | undefined => TENSES.find((t) => t.key === key)
 
+// AI kadang set sesuaiTenseTarget=false padahal tenseDetected justru = tense target
+// (false-negative → koreksi "ubah ke X" padahal sudah X). Percayai deteksi konkret:
+// cocok bila himpunan katanya sama ("Present Simple" == "Simple Present").
+export function detectedMatchesTense(detected: string | undefined, tenseName: string): boolean {
+  const words = (s: string) => new Set(s.toLowerCase().replace(/[^a-z ]/g, ' ').split(/\s+/).filter(Boolean))
+  const a = words(detected ?? ''), b = words(tenseName)
+  return a.size > 0 && a.size === b.size && [...b].every((w) => a.has(w))
+}
+
 // Bentuk minimal progress yang dibutuhkan helper (cocok dengan TenseProgress).
 export interface TenseProgressLike {
   correct_count: number

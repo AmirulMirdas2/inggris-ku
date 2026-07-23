@@ -58,6 +58,13 @@ export interface TenseProgress {
   status: CardStatus
 }
 
+// Satu koreksi ber-aspek. `aspek` = kunci stabil untuk mencocokkan koreksi
+// antar-percobaan (lihat CorrectionCards).
+export interface Koreksi {
+  aspek: string
+  pesan: string
+}
+
 // Hasil penilaian kalimat dari Edge Function evaluate-sentence.
 export interface Evaluation {
   benar: boolean
@@ -67,5 +74,6 @@ export interface Evaluation {
   kalimatKoreksi: string
   artiKalimatId: string
   penjelasanId: string
+  koreksiList?: Koreksi[]
   bonusTense: boolean
 }

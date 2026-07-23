@@ -4,9 +4,11 @@ import type { Word } from '../../lib/types'
 import type { Level } from '../../lib/exercises'
 import { blankSentence, checkBlank, checkArrange, tokenize, shuffle } from '../../lib/exercises'
 import { evaluateSentence, unlockedTenseKeys } from '../../lib/api'
+import type { Koreksi } from '../../lib/types'
 import { speak } from '../../lib/audio'
-import { tenseByKey, TENSES } from '../../lib/tenses'
+import { tenseByKey, TENSES, detectedMatchesTense } from '../../lib/tenses'
 import { PixelIcon } from '../PixelIcon'
+import { CorrectionCards, buildErrors, useCorrectionCards } from '../CorrectionCards'
 
 // tense_focus kata (enum DB) → key materi tense untuk pilihan default.
 const FOCUS_TO_KEY: Record<string, string> = {
@@ -33,6 +35,11 @@ export default function PhaseProduce({
   const [firstWrong, setFirstWrong] = useState<string | null>(null)
   const [bonusTense, setBonusTense] = useState(false)
   const [corrected, setCorrected] = useState<string | undefined>()
+  // Level 3: checklist koreksi ber-aspek (dicoret saat diperbaiki) + arti + penjelasan.
+  // Kartu reset otomatis tiap kata karena motion.div di-remount pada word.id.
+  const { cards, sync } = useCorrectionCards()
+  const [wrongArti, setWrongArti] = useState<string | undefined>()
+  const [explanation, setExplanation] = useState<string | undefined>()
   // Level 3: setelah kalimat benar, tahan sebentar untuk tampilkan arti sebelum lanjut.
   const [success, setSuccess] = useState<null | { sentence: string; arti: string }>(null)
 
@@ -43,7 +50,7 @@ export default function PhaseProduce({
       sentence,
       wrongSentence: usedHint ? firstWrong ?? sentence : undefined,
       corrected,
-      explanation: feedback?.msg,
+      explanation: explanation ?? feedback?.msg,
     })
   }
 
@@ -57,7 +64,7 @@ export default function PhaseProduce({
       key={word.id}
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: [0.6, 0, 0.4, 1] }}
-      className={`card space-y-4 ${feedback && !feedback.ok ? 'shake border-2 border-coral' : ''}`}
+      className={`card space-y-4 ${(feedback && !feedback.ok) || cards.some((c) => !c.fixed) ? 'shake border-2 border-coral' : ''}`}
     >
       {mode === 'review' ? (
         // Review = uji ingatan: sembunyikan kata Inggris, beri arti sebagai petunjuk.
@@ -72,7 +79,17 @@ export default function PhaseProduce({
 
       {level === 1 && <BlankExercise word={word} onWrong={markWrong} onRight={(s) => { setFeedback({ ok: true, msg: '' }); pass(s, false) }} disabled={!!feedback?.ok || revealed} />}
       {level === 2 && <ArrangeExercise example={example} onWrong={markWrong} onRight={(s) => { setFeedback({ ok: true, msg: '' }); pass(s, false) }} disabled={!!feedback?.ok || revealed} />}
-      {level === 3 && <FreeExercise word={word} onWrong={markWrong} onRight={(s, bonus, corr, arti) => { setBonusTense(bonus); setCorrected(corr); setSuccess({ sentence: s, arti }) }} disabled={!!feedback?.ok || revealed || !!success} />}
+      {level === 3 && (
+        <FreeExercise
+          word={word}
+          onWrong={(attempt, errors, arti, expl) => {
+            if (firstWrong === null) setFirstWrong(attempt)
+            setWrongArti(arti); setExplanation(expl); sync(errors)
+          }}
+          onRight={(s, bonus, corr, arti) => { sync([]); setBonusTense(bonus); setCorrected(corr); setSuccess({ sentence: s, arti }) }}
+          disabled={revealed || !!success}
+        />
+      )}
 
       {success && (
         <div className="space-y-3 rounded-xl bg-success/10 p-3">
@@ -83,7 +100,8 @@ export default function PhaseProduce({
         </div>
       )}
 
-      {feedback && !feedback.ok && (
+      {/* Level 1 & 2: pesan tunggal + eskalasi contoh (cek lokal, satu kesalahan). */}
+      {level !== 3 && feedback && !feedback.ok && (
         <div className="space-y-3">
           <p className="rounded-xl bg-coral/10 p-3 text-coral">{feedback.msg}</p>
           {feedback.arti && (
@@ -100,6 +118,23 @@ export default function PhaseProduce({
               <button onClick={() => setFeedback(null)} className="btn-ghost">Coba lagi</button>
               <button onClick={() => setRevealed(true)} className="btn-primary">Lihat contoh & pelajari</button>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* Level 3: checklist koreksi — perbaiki & kirim ulang, tiap yang beres dicoret. */}
+      {level === 3 && !success && cards.length > 0 && (
+        <div className="space-y-3">
+          <CorrectionCards cards={cards} />
+          {wrongArti && <p className="text-sm muted">Arti kalimat yang benar: {wrongArti}</p>}
+          {revealed ? (
+            <div className="rounded-xl bg-black/5 p-3 dark:bg-white/5">
+              <button onClick={() => speak(example)} className="flex items-center gap-2 font-semibold text-brand"><PixelIcon name="speaker" size={16} /> {example}</button>
+              <p className="text-sm muted">{word.example_id}</p>
+              <button onClick={() => pass(example, true)} className="btn-primary mt-3">Lanjut</button>
+            </div>
+          ) : (
+            <button onClick={() => setRevealed(true)} className="btn-ghost">Bingung? Lihat contoh & pelajari</button>
           )}
         </div>
       )}
@@ -174,7 +209,7 @@ function ArrangeExercise({ example, onWrong, onRight, disabled }: {
 // --- Level 3: kalimat bebas (LLM) ---
 function FreeExercise({ word, onWrong, onRight, disabled }: {
   word: Word
-  onWrong: (a: string, m: string, arti?: string) => void
+  onWrong: (attempt: string, errors: Koreksi[], arti?: string, explanation?: string) => void
   onRight: (s: string, bonus: boolean, corr: string | undefined, arti: string) => void
   disabled: boolean
 }) {
@@ -200,16 +235,14 @@ function FreeExercise({ word, onWrong, onRight, disabled }: {
     try {
       const label = activeTense ? activeTense.aiLabel : word.tense_focus
       const ev = await evaluateSentence(word.text, label, val)
-      const tenseOk = !activeTense || ev.sesuaiTenseTarget
+      const tenseOk = !activeTense || ev.sesuaiTenseTarget || detectedMatchesTense(ev.tenseDetected, activeTense.name)
       if (ev.benar && ev.pakaiKataTarget && tenseOk) {
         onRight(val, ev.bonusTense, ev.kalimatKoreksi || undefined, ev.artiKalimatId)
-      } else if (activeTense && ev.benar && ev.pakaiKataTarget && !ev.sesuaiTenseTarget) {
-        onWrong(val, `Kalimatmu benar, tapi ini ${ev.tenseDetected || 'tense lain'} — bukan ${activeTense.name}. Ubah ke pola: ${activeTense.formula}.`, ev.artiKalimatId)
       } else {
-        onWrong(val, ev.penjelasanId || 'Belum tepat, tapi usahamu bagus! Coba perbaiki sedikit.', ev.artiKalimatId)
+        onWrong(val, buildErrors(ev, word.text, activeTense, tenseOk), ev.artiKalimatId, ev.penjelasanId)
       }
     } catch {
-      onWrong(val, 'Koneksi bermasalah. Cek internet lalu coba lagi ya.')
+      onWrong(val, [{ aspek: 'koneksi', pesan: 'Koneksi bermasalah. Cek internet lalu coba lagi ya.' }])
     } finally {
       setBusy(false)
     }

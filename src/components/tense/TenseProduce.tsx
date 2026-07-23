@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import type { TenseInfo } from '../../lib/tenses'
+import { detectedMatchesTense, type TenseInfo } from '../../lib/tenses'
 import { evaluateSentence, fetchWordPool, type PoolWord } from '../../lib/api'
 import { speak } from '../../lib/audio'
 import { sfxCorrect } from '../../lib/sfx'
 import { PixelIcon } from '../PixelIcon'
+import { CorrectionCards, buildErrors, useCorrectionCards } from '../CorrectionCards'
 
 // Tahap "Produksi" — SATU-SATUNYA bagian tense yang memakai AI.
 // Lolos hanya bila kalimat: benar + pakai kata target + BENAR-BENAR tense ini
@@ -28,47 +29,46 @@ export default function TenseProduce({
 
   const [val, setVal] = useState('')
   const [busy, setBusy] = useState(false)
-  const [wrong, setWrong] = useState<{ msg: string; arti?: string } | null>(null)
+  const { cards, sync, reset: resetCards } = useCorrectionCards()
+  const [wrongArti, setWrongArti] = useState<string | undefined>()
   const [ok, setOk] = useState<{ sentence: string; arti: string } | null>(null)
   const [triedWrong, setTriedWrong] = useState(false)
+  const hasActive = cards.some((c) => !c.fixed)
 
   async function check() {
     if (!val.trim()) return
     // Gerbang tantangan: cek lokal dulu (tanpa AI) bahwa subjeknya she/he/it.
     if (challengeOn && !/\b(he|she|it)\b/i.test(val)) {
-      setTriedWrong(true)
-      setWrong({ msg: 'Tantangan ini WAJIB memakai she, he, atau it sebagai subjek. Perhatikan bentuknya untuk orang ketiga tunggal.' })
+      setTriedWrong(true); setWrongArti(undefined)
+      sync([{ aspek: 'orang-ketiga', pesan: 'Tantangan ini WAJIB memakai she, he, atau it sebagai subjek. Perhatikan bentuk orang ketiga tunggal.' }])
       return
     }
-    setBusy(true); setWrong(null)
+    setBusy(true)
     try {
       // Target kata opsional secara makna, tapi evaluate-sentence butuh sebuah
       // kata; kalau pool kosong, pakai kata pertama dari kalimat siswa.
       const target = word?.text ?? val.trim().split(/\s+/)[0] ?? 'it'
       const ev = await evaluateSentence(target, tense.aiLabel, val)
-      if (ev.benar && ev.pakaiKataTarget && ev.sesuaiTenseTarget) {
+      // Percayai deteksi konkret bila cocok target (hindari "ubah ke X padahal sudah X").
+      const tenseOk = ev.sesuaiTenseTarget || detectedMatchesTense(ev.tenseDetected, tense.name)
+      if (ev.benar && ev.pakaiKataTarget && tenseOk) {
+        sync([]) // coret semua kartu koreksi
         if (challengeOn) setChallengeDone(true)
         sfxCorrect()
         setOk({ sentence: ev.kalimatKoreksi || val, arti: ev.artiKalimatId })
-      } else if (ev.benar && ev.pakaiKataTarget && !ev.sesuaiTenseTarget) {
-        setTriedWrong(true)
-        setWrong({
-          msg: `Kalimatmu benar, tapi ini ${ev.tenseDetected || 'tense lain'} — bukan ${tense.name}. Ubah ke pola: ${tense.formula}.`,
-          arti: ev.artiKalimatId,
-        })
       } else {
-        setTriedWrong(true)
-        setWrong({ msg: ev.penjelasanId || 'Belum tepat, coba perbaiki sedikit.', arti: ev.artiKalimatId })
+        setTriedWrong(true); setWrongArti(ev.artiKalimatId)
+        sync(buildErrors(ev, target, tense, tenseOk))
       }
     } catch {
-      setWrong({ msg: 'Koneksi bermasalah. Cek internet lalu coba lagi ya.' })
+      sync([{ aspek: 'koneksi', pesan: 'Koneksi bermasalah. Cek internet lalu coba lagi ya.' }])
     } finally {
       setBusy(false)
     }
   }
 
   function reset(nextWord: boolean) {
-    setVal(''); setWrong(null); setOk(null); setTriedWrong(false)
+    setVal(''); resetCards(); setWrongArti(undefined); setOk(null); setTriedWrong(false)
     if (nextWord) setSeed((s) => s + 1)
   }
 
@@ -79,7 +79,7 @@ export default function TenseProduce({
       key={seed}
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: [0.6, 0, 0.4, 1] }}
-      className={`card space-y-4 ${wrong ? 'shake border-2 border-coral' : ''}`}
+      className={`card space-y-4 ${hasActive ? 'shake border-2 border-coral' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold muted">Buat kalimat <span className="text-brand">{tense.name}</span></p>
@@ -125,10 +125,10 @@ export default function TenseProduce({
         </>
       )}
 
-      {wrong && !ok && (
+      {!ok && cards.length > 0 && (
         <div className="space-y-2">
-          <p className="bg-coral/10 p-3 text-coral">{wrong.msg}</p>
-          {wrong.arti && <p className="text-sm muted">Arti kalimat yang benar: {wrong.arti}</p>}
+          <CorrectionCards cards={cards} />
+          {wrongArti && <p className="text-sm muted">Arti kalimat yang benar: {wrongArti}</p>}
         </div>
       )}
     </motion.div>

@@ -17,14 +17,39 @@ const FALLBACK = {
   benar: false, pakaiKataTarget: false, tenseDetected: 'unknown',
   sesuaiTenseTarget: false, kalimatKoreksi: '', artiKalimatId: '',
   penjelasanId: 'Maaf, penilaian sedang bermasalah. Coba lagi sebentar ya. 🙂',
-  bonusTense: false,
+  koreksiList: [], bonusTense: false,
 }
+
+// Aspek koreksi tetap — frontend memakainya sebagai kunci stabil untuk mencocokkan
+// koreksi antar-percobaan (yang sudah diperbaiki dicoret, yang baru ditambah).
+const ASPEK = 'tense | kata-kerja | subjek | kata-target | artikel | preposisi | urutan | kapital | tanda-baca | ejaan | lainnya'
 
 const SYSTEM =
   'Kamu guru bahasa Inggris untuk pemula Indonesia. Nilai kalimat siswa. ' +
-  'Balas HANYA JSON valid tanpa teks lain. Bahasa penjelasan = Indonesia. ' +
-  'Nada ramah dan menyemangati. Beri MAKSIMAL SATU koreksi utama. ' +
-  'Selalu sebut satu hal yang sudah benar.'
+  'Balas HANYA JSON valid tanpa teks lain. Bahasa penjelasan = Indonesia. Nada ramah. ' +
+  'PERIKSA kalimat kata demi kata dan daftarkan SETIAP kesalahan yang ada di koreksiList — ' +
+  'JANGAN berhenti di satu kesalahan. Cek semua: huruf kapital di awal kalimat & kata "I", ' +
+  'kata kerja yang hilang/salah (mis. butuh "is" sebelum kata sifat), kesesuaian subjek-kata kerja ' +
+  '(he/she/it + s/es), pilihan preposisi (in/on/at), artikel (a/an/the), urutan kata, ejaan, dan tanda baca. ' +
+  'Satu item = satu aspek berbeda + satu kalimat ringkas cara memperbaiki (maksimal 6 item). ' +
+  'PENTING: taruh SEMUA kesalahan di koreksiList, JANGAN gabung jadi satu di tenseDetected/penjelasanId. ' +
+  'tenseDetected = tense dari kalimat yang SUDAH dibetulkan (bukan "missing verb" dsb). ' +
+  'Jika kalimat sudah benar, koreksiList = []. Selalu sebut satu hal yang sudah benar di penjelasanId.'
+
+// Few-shot: model lite butuh contoh konkret agar mau memecah kesalahan ke koreksiList
+// (bukan menumpuknya di tenseDetected). Satu kalimat rusak → banyak kartu.
+const EXAMPLE =
+  '\n\nContoh. Kalimat siswa: "he careful in the tree". Jawaban yang BENAR ' +
+  '(perhatikan koreksiList berisi BANYAK item, satu per kesalahan):\n' +
+  '{"benar":false,"pakaiKataTarget":true,"tenseDetected":"Present Simple",' +
+  '"sesuaiTenseTarget":true,"kalimatKoreksi":"He is careful on the tree.",' +
+  '"artiKalimatId":"Dia hati-hati di atas pohon.",' +
+  '"penjelasanId":"Pilihan katamu sudah bagus! Ada beberapa hal kecil yang perlu dirapikan ya.",' +
+  '"koreksiList":[' +
+  '{"aspek":"kapital","pesan":"Awali kalimat dengan huruf besar: \\"He\\", bukan \\"he\\"."},' +
+  '{"aspek":"kata-kerja","pesan":"Butuh \\"is\\" sebelum kata sifat: \\"He is careful\\"."},' +
+  '{"aspek":"preposisi","pesan":"Pakai \\"on the tree\\" (di atas pohon), bukan \\"in the tree\\"."}' +
+  '],"bonusTense":false}'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -40,8 +65,10 @@ Deno.serve(async (req) => {
       `  "tenseDetected": "string",\n  "sesuaiTenseTarget": true|false,\n` +
       `  "kalimatKoreksi": "string (kosong jika sudah benar)",\n` +
       `  "artiKalimatId": "arti Bahasa Indonesia dari kalimat yang BENAR (kalimat siswa bila sudah benar, atau kalimatKoreksi bila dikoreksi)",\n` +
-      `  "penjelasanId": "1-2 kalimat Bahasa Indonesia, ramah, satu koreksi + satu pujian",\n` +
-      `  "bonusTense": true|false\n}`
+      `  "penjelasanId": "1-2 kalimat Bahasa Indonesia, ramah, ringkasan + satu pujian",\n` +
+      `  "koreksiList": [ { "aspek": "${ASPEK}", "pesan": "1 kalimat ramah cara memperbaiki aspek ini" } ],\n` +
+      `  "bonusTense": true|false\n}` +
+      EXAMPLE
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent` +
       `?key=${Deno.env.get('GEMINI_API_KEY')}`

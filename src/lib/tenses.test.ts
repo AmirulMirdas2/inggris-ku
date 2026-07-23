@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { TENSES, tenseByKey, isUnlocked, tenseStage, UNLOCK_AT, MASTER_AT } from './tenses'
+import { TENSES, tenseByKey, isUnlocked, tenseStage, detectedMatchesTense, UNLOCK_AT, MASTER_AT } from './tenses'
 
 describe('konten 16 tense', () => {
   it('tepat 16 tense, order 0..15 unik & berurut', () => {
@@ -46,5 +46,13 @@ describe('unlock & stage', () => {
     expect(tenseStage(first, { presentSimple: { correct_count: MASTER_AT } })).toBe('mastered')
     // status 'mastered' eksplisit juga dihitung walau count di bawah 50 (mis. sudah lama)
     expect(tenseStage(first, { presentSimple: { correct_count: 3, status: 'mastered' } })).toBe('mastered')
+  })
+
+  it('detectedMatchesTense: cocok tak peduli urutan/kapital, beda ditolak', () => {
+    expect(detectedMatchesTense('Present Simple', 'Present Simple')).toBe(true)
+    expect(detectedMatchesTense('simple present', 'Present Simple')).toBe(true) // urutan bebas
+    expect(detectedMatchesTense('Present Continuous', 'Present Simple')).toBe(false)
+    expect(detectedMatchesTense('', 'Present Simple')).toBe(false)
+    expect(detectedMatchesTense(undefined, 'Present Simple')).toBe(false)
   })
 })
