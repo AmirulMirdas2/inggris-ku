@@ -8,6 +8,7 @@ import type { Koreksi } from '../../lib/types'
 import { speak } from '../../lib/audio'
 import { tenseByKey, TENSES, detectedMatchesTense } from '../../lib/tenses'
 import { PixelIcon } from '../PixelIcon'
+import { PosBadge } from '../PosBadge'
 import { CorrectionCards, buildErrors, useCorrectionCards } from '../CorrectionCards'
 
 // tense_focus kata (enum DB) → key materi tense untuk pilihan default.
@@ -68,12 +69,14 @@ export default function PhaseProduce({
     >
       {mode === 'review' ? (
         // Review = uji ingatan: sembunyikan kata Inggris, beri arti sebagai petunjuk.
-        <p className="text-sm font-semibold muted">
+        <p className="flex flex-wrap items-center gap-2 text-sm font-semibold muted">
           Ingat kata Inggrisnya: <span className="text-brand">{word.translation_id}</span>
+          <PosBadge pos={word.part_of_speech} />
         </p>
       ) : (
-        <p className="text-sm font-semibold muted">
+        <p className="flex flex-wrap items-center gap-2 text-sm font-semibold muted">
           Kata target: <span className="text-brand">{word.text}</span> · {word.translation_id}
+          <PosBadge pos={word.part_of_speech} />
         </p>
       )}
 

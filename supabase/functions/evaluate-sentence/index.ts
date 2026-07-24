@@ -32,6 +32,8 @@ const SYSTEM =
   'kata kerja yang hilang/salah (mis. butuh "is" sebelum kata sifat), kesesuaian subjek-kata kerja ' +
   '(he/she/it + s/es), pilihan preposisi (in/on/at), artikel (a/an/the), urutan kata, ejaan, dan tanda baca. ' +
   'Satu item = satu aspek berbeda + satu kalimat ringkas cara memperbaiki (maksimal 6 item). ' +
+  'ABAIKAN hal sepele — JANGAN jadikan koreksi: titik/tanda baca di akhir kalimat, ' +
+  'dan spasi berlebih atau dobel. Fokus ke kesalahan yang mengubah makna atau tata bahasa. ' +
   'PENTING: taruh SEMUA kesalahan di koreksiList, JANGAN gabung jadi satu di tenseDetected/penjelasanId. ' +
   'tenseDetected = tense dari kalimat yang SUDAH dibetulkan (bukan "missing verb" dsb). ' +
   'Jika kalimat sudah benar, koreksiList = []. Selalu sebut satu hal yang sudah benar di penjelasanId.'
@@ -57,10 +59,12 @@ Deno.serve(async (req) => {
   try {
     const { word, tenseFocus, sentence } = await req.json()
     if (!word || !sentence) return json({ error: 'word & sentence wajib' }, 400)
+    // Rapikan spasi dobel di sini supaya AI tak pernah mengoreksinya.
+    const clean = String(sentence).replace(/\s+/g, ' ').trim()
 
     const prompt =
       `Kata target: "${word}". Tense yang diharapkan: "${tenseFocus}".\n` +
-      `Kalimat siswa: "${sentence}".\n\n` +
+      `Kalimat siswa: "${clean}".\n\n` +
       `Format:\n{\n  "benar": true|false,\n  "pakaiKataTarget": true|false,\n` +
       `  "tenseDetected": "string",\n  "sesuaiTenseTarget": true|false,\n` +
       `  "kalimatKoreksi": "string (kosong jika sudah benar)",\n` +

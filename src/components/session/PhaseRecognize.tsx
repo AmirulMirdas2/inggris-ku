@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { PixelIcon } from '../PixelIcon'
 import type { Word } from '../../lib/types'
 import { speak } from '../../lib/audio'
+import { PosBadge } from '../PosBadge'
 import SpeakCheck from './SpeakCheck'
 
 // FASE A — kenali tanpa tekanan.
@@ -23,6 +24,7 @@ export default function PhaseRecognize({ word, onDone }: { word: Word; onDone: (
         </button>
         {word.phonetic && <p className="mt-1 muted">{word.phonetic}</p>}
         <p className="mt-2 text-xl">{word.translation_id}</p>
+        <div className="mt-2"><PosBadge pos={word.part_of_speech} /></div>
         {word.chunk && <p className="mt-1 text-sm muted">frasa: {word.chunk}</p>}
       </div>
 

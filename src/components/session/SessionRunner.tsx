@@ -11,6 +11,7 @@ import { celebrate, celebrateMastered } from '../../lib/celebrate'
 import { suppressMusic, releaseMusic } from '../../lib/music'
 import { PixelIcon } from '../PixelIcon'
 import PhaseRecognize from './PhaseRecognize'
+import PhaseWrite from './PhaseWrite'
 import PhaseProduce, { type ProduceResult } from './PhaseProduce'
 
 export interface SessionItem {
@@ -22,7 +23,8 @@ export interface SessionItem {
 export default function SessionRunner({ items, mode }: { items: SessionItem[]; mode: 'learn' | 'review' }) {
   const { session, profile, setProfile } = useAuth()
   const [i, setI] = useState(0)
-  const [phase, setPhase] = useState<'recognize' | 'produce'>(mode === 'learn' ? 'recognize' : 'produce')
+  // learn: kenali → tulis 3x → produksi. review harian: tulis 1x → produksi.
+  const [phase, setPhase] = useState<'recognize' | 'write' | 'produce'>(mode === 'learn' ? 'recognize' : 'write')
   const [xpGained, setXpGained] = useState(0)
   const done = i >= items.length
 
@@ -42,7 +44,7 @@ export default function SessionRunner({ items, mode }: { items: SessionItem[]; m
   const level = levelForWeek(word.theme_week)
 
   function next() {
-    setPhase(mode === 'learn' ? 'recognize' : 'produce')
+    setPhase(mode === 'learn' ? 'recognize' : 'write')
     setI((n) => n + 1)
   }
 
@@ -86,8 +88,10 @@ export default function SessionRunner({ items, mode }: { items: SessionItem[]; m
       </div>
 
       {phase === 'recognize'
-        ? <PhaseRecognize key={i} word={word} onDone={() => setPhase('produce')} />
-        : <PhaseProduce key={i} word={word} level={level} mode={mode} onResult={handleResult} />}
+        ? <PhaseRecognize key={i} word={word} onDone={() => setPhase('write')} />
+        : phase === 'write'
+          ? <PhaseWrite key={`w${i}`} word={word} reps={mode === 'learn' ? 3 : 1} onDone={() => setPhase('produce')} />
+          : <PhaseProduce key={i} word={word} level={level} mode={mode} onResult={handleResult} />}
     </div>
   )
 }

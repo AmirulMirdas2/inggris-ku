@@ -5,6 +5,7 @@ import { evaluateSentence, fetchWordPool, type PoolWord } from '../../lib/api'
 import { speak } from '../../lib/audio'
 import { sfxCorrect } from '../../lib/sfx'
 import { PixelIcon } from '../PixelIcon'
+import { PosBadge } from '../PosBadge'
 import { CorrectionCards, buildErrors, useCorrectionCards } from '../CorrectionCards'
 
 // Tahap "Produksi" — SATU-SATUNYA bagian tense yang memakai AI.
@@ -98,7 +99,7 @@ export default function TenseProduce({
 
       {word && (
         <div className="flex items-center justify-between gap-2 border-[3px] border-ink bg-white p-3 dark:border-white/25 dark:bg-slate-800">
-          <p className="text-sm">Pakai kata: <b className="text-brand">{word.text}</b> · {word.translation_id}</p>
+          <p className="flex flex-wrap items-center gap-2 text-sm">Pakai kata: <b className="text-brand">{word.text}</b> · {word.translation_id} <PosBadge pos={word.pos} /></p>
           <button onClick={() => reset(true)} className="flex items-center gap-1 text-xs font-semibold text-accent">
             <PixelIcon name="repeat" size={14} /> ganti
           </button>

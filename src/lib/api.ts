@@ -115,6 +115,7 @@ export async function fetchProgressByWeek(): Promise<WeekProgress[]> {
 
 export interface StudiedWord {
   text: string; translation_id: string; phonetic: string | null
+  part_of_speech: string | null
   last_reviewed: string; status: 'learning' | 'mastered'
   due_date: string; interval_days: number
 }
@@ -122,10 +123,11 @@ export interface StudiedWord {
 /** Semua kata yang sudah dipelajari (learning + mastered), terbaru dulu. */
 export async function fetchStudiedWords(): Promise<StudiedWord[]> {
   const { data } = await supabase.from('review_cards')
-    .select('last_reviewed, status, due_date, interval_days, word:words(text, translation_id, phonetic)')
+    .select('last_reviewed, status, due_date, interval_days, word:words(text, translation_id, phonetic, part_of_speech)')
     .order('last_reviewed', { ascending: false })
   return (data ?? []).map((r: any) => ({
     text: r.word.text, translation_id: r.word.translation_id, phonetic: r.word.phonetic,
+    part_of_speech: r.word.part_of_speech,
     last_reviewed: r.last_reviewed, status: r.status,
     due_date: r.due_date, interval_days: r.interval_days,
   })).filter((w: StudiedWord) => w.last_reviewed)
@@ -237,7 +239,7 @@ export async function evaluateSentence(word: string, tenseFocus: string, sentenc
 
 // ---------- Belajar tense ----------
 
-export interface PoolWord { text: string; translation_id: string }
+export interface PoolWord { text: string; translation_id: string; pos: string | null }
 
 /** Kata target latihan tense = kosakata yang SUDAH dipelajari user (punya kartu
  *  SRS). Kata fungsi (the, a, is) dilewati — sulit jadi kalimat mandiri. Kosong
@@ -252,7 +254,7 @@ export async function fetchWordPool(limit = 60): Promise<PoolWord[]> {
     // Hanya kata yang bisa dipakai di tense mana pun (lihat isCrossTenseTarget):
     // "was"/"going" ditolak karena bentuknya terkunci ke satu waktu.
     .filter((w: any) => w && isCrossTenseTarget(w.part_of_speech, w.text, w.tense_focus))
-    .map((w: any) => ({ text: w.text, translation_id: w.translation_id })) as PoolWord[]
+    .map((w: any) => ({ text: w.text, translation_id: w.translation_id, pos: w.part_of_speech })) as PoolWord[]
 }
 
 /** Progress semua tense pengguna, dipetakan per tense_key. */

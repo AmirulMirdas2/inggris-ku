@@ -5,6 +5,7 @@ import { useAuth } from '../store/auth'
 import { speak } from '../lib/audio'
 import { Skeleton } from '../components/Skeleton'
 import { PixelIcon } from '../components/PixelIcon'
+import { PosBadge } from '../components/PosBadge'
 
 const DAY_LABELS = ['Sn', 'Sl', 'Rb', 'Km', 'Jm', 'Sb', 'Mg']
 
@@ -201,6 +202,7 @@ export default function Vocabulary() {
                   <span className="font-bold text-brand">{w.text}</span>
                   {w.phonetic && <span className="muted ml-1 text-xs">{w.phonetic}</span>}
                   <span className="muted block text-sm">{w.translation_id}</span>
+                  <span className="mt-1 block"><PosBadge pos={w.part_of_speech} /></span>
                   {/* Kata 'mastered' sengaja tidak diberi tanggal: fetchDueCards
                       mengecualikannya, jadi ia memang tak akan muncul lagi. */}
                   <span className="tnum block text-xs font-semibold text-brand">
