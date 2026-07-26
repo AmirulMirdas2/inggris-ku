@@ -4,13 +4,18 @@ import { PixelIcon } from './PixelIcon'
 
 // Terjemahkan hasil evaluate-sentence jadi daftar koreksi ber-aspek. Target &
 // tense disintesis di sini supaya selaras dengan gerbang lolos; sisanya dari AI.
+// Kosmetik yang tak perlu dikoreksi ke siswa (huruf besar awal & tanda baca);
+// dibetulkan diam-diam di kalimatKoreksi, bukan jadi kartu. Jaring pengaman
+// bila AI masih mengirimnya.
+const SKIP_ASPEK = new Set(['kapital', 'tanda-baca'])
+
 export function buildErrors(
   ev: Evaluation, target: string, tense?: { name: string; formula: string }, tenseOk = true,
 ): Koreksi[] {
   const errs: Koreksi[] = []
   if (!ev.pakaiKataTarget) errs.push({ aspek: 'kata-target', pesan: `Belum memakai kata "${target}". Sisipkan ke kalimatmu.` })
   if (tense && !tenseOk) errs.push({ aspek: 'tense', pesan: `Ini ${ev.tenseDetected || 'tense lain'} — ubah ke ${tense.name}, pola: ${tense.formula}.` })
-  for (const k of ev.koreksiList ?? []) if (k?.aspek && k?.pesan) errs.push(k)
+  for (const k of ev.koreksiList ?? []) if (k?.aspek && k?.pesan && !SKIP_ASPEK.has(k.aspek)) errs.push(k)
   if (!errs.length) errs.push({ aspek: 'lainnya', pesan: ev.penjelasanId || 'Belum tepat, coba perbaiki sedikit.' })
   return errs
 }

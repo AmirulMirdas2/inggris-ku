@@ -22,18 +22,19 @@ const FALLBACK = {
 
 // Aspek koreksi tetap — frontend memakainya sebagai kunci stabil untuk mencocokkan
 // koreksi antar-percobaan (yang sudah diperbaiki dicoret, yang baru ditambah).
-const ASPEK = 'tense | kata-kerja | subjek | kata-target | artikel | preposisi | urutan | kapital | tanda-baca | ejaan | lainnya'
+const ASPEK = 'tense | kata-kerja | subjek | kata-target | artikel | preposisi | urutan | ejaan | lainnya'
 
 const SYSTEM =
   'Kamu guru bahasa Inggris untuk pemula Indonesia. Nilai kalimat siswa. ' +
   'Balas HANYA JSON valid tanpa teks lain. Bahasa penjelasan = Indonesia. Nada ramah. ' +
   'PERIKSA kalimat kata demi kata dan daftarkan SETIAP kesalahan yang ada di koreksiList — ' +
-  'JANGAN berhenti di satu kesalahan. Cek semua: huruf kapital di awal kalimat & kata "I", ' +
+  'JANGAN berhenti di satu kesalahan. Cek semua: ' +
   'kata kerja yang hilang/salah (mis. butuh "is" sebelum kata sifat), kesesuaian subjek-kata kerja ' +
-  '(he/she/it + s/es), pilihan preposisi (in/on/at), artikel (a/an/the), urutan kata, ejaan, dan tanda baca. ' +
+  '(he/she/it + s/es), pilihan preposisi (in/on/at), artikel (a/an/the), urutan kata, dan ejaan. ' +
   'Satu item = satu aspek berbeda + satu kalimat ringkas cara memperbaiki (maksimal 6 item). ' +
-  'ABAIKAN hal sepele — JANGAN jadikan koreksi: titik/tanda baca di akhir kalimat, ' +
-  'dan spasi berlebih atau dobel. Fokus ke kesalahan yang mengubah makna atau tata bahasa. ' +
+  'ABAIKAN hal kosmetik — JANGAN pernah jadikan koreksi: huruf besar/kapital (termasuk di awal ' +
+  'kalimat & kata "I"), titik/tanda baca, dan spasi berlebih. Betulkan itu diam-diam di kalimatKoreksi ' +
+  'saja, tanpa membuat kartu koreksi. Fokus HANYA ke kesalahan tata bahasa, pilihan kata, dan makna. ' +
   'PENTING: taruh SEMUA kesalahan di koreksiList, JANGAN gabung jadi satu di tenseDetected/penjelasanId. ' +
   'tenseDetected = tense dari kalimat yang SUDAH dibetulkan (bukan "missing verb" dsb). ' +
   'Jika kalimat sudah benar, koreksiList = []. Selalu sebut satu hal yang sudah benar di penjelasanId.'
@@ -48,10 +49,10 @@ const EXAMPLE =
   '"artiKalimatId":"Dia hati-hati di atas pohon.",' +
   '"penjelasanId":"Pilihan katamu sudah bagus! Ada beberapa hal kecil yang perlu dirapikan ya.",' +
   '"koreksiList":[' +
-  '{"aspek":"kapital","pesan":"Awali kalimat dengan huruf besar: \\"He\\", bukan \\"he\\"."},' +
   '{"aspek":"kata-kerja","pesan":"Butuh \\"is\\" sebelum kata sifat: \\"He is careful\\"."},' +
   '{"aspek":"preposisi","pesan":"Pakai \\"on the tree\\" (di atas pohon), bukan \\"in the tree\\"."}' +
-  '],"bonusTense":false}'
+  '],"bonusTense":false}\n' +
+  'Perhatikan: huruf besar "He" dibetulkan langsung di kalimatKoreksi, TIDAK jadi kartu koreksi.'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })

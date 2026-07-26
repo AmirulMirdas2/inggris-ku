@@ -1,5 +1,22 @@
 import { describe, it, expect } from 'vitest'
-import { syncCards, type CorrectionCard } from './CorrectionCards'
+import { syncCards, buildErrors, type CorrectionCard } from './CorrectionCards'
+import type { Evaluation } from '../lib/types'
+
+const ev = (over: Partial<Evaluation>): Evaluation => ({
+  benar: false, pakaiKataTarget: true, tenseDetected: '', sesuaiTenseTarget: true,
+  kalimatKoreksi: '', artiKalimatId: '', penjelasanId: 'ok', bonusTense: false, ...over,
+})
+
+describe('buildErrors', () => {
+  it('buang kartu kosmetik (kapital & tanda-baca), simpan yang tata bahasa', () => {
+    const errs = buildErrors(ev({ koreksiList: [
+      { aspek: 'kapital', pesan: 'huruf besar' },
+      { aspek: 'tanda-baca', pesan: 'titik' },
+      { aspek: 'kata-kerja', pesan: 'butuh is' },
+    ] }), 'careful')
+    expect(errs.map((e) => e.aspek)).toEqual(['kata-kerja'])
+  })
+})
 
 describe('syncCards', () => {
   it('percobaan pertama: semua kesalahan jadi kartu aktif', () => {
