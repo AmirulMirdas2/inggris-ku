@@ -37,6 +37,9 @@ const SYSTEM =
   'saja, tanpa membuat kartu koreksi. Fokus HANYA ke kesalahan tata bahasa, pilihan kata, dan makna. ' +
   'PENTING: taruh SEMUA kesalahan di koreksiList, JANGAN gabung jadi satu di tenseDetected/penjelasanId. ' +
   'tenseDetected = tense dari kalimat yang SUDAH dibetulkan (bukan "missing verb" dsb). ' +
+  'Koreksi HANYA kesalahan yang JELAS salah. JANGAN mengarang koreksi untuk preposisi atau ' +
+  'pilihan kata yang masih wajar/bisa diterima — kalau ragu, biarkan. Jika kalimat sudah wajar ' +
+  'dan benar secara tata bahasa, set benar=true dan koreksiList=[] (jangan dipaksa cari kesalahan). ' +
   'Jika kalimat sudah benar, koreksiList = []. Selalu sebut satu hal yang sudah benar di penjelasanId.'
 
 // Few-shot: model lite butuh contoh konkret agar mau memecah kesalahan ke koreksiList
@@ -90,8 +93,9 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: SYSTEM }] },
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          // responseMimeType JSON → Gemini balas JSON valid, tanpa pagar ```.
-          generationConfig: { temperature: 0.3, responseMimeType: 'application/json' },
+          // temp 0 → deterministik & konsisten (hindari koreksi preposisi "flip-flop"
+          // in↔on). responseMimeType JSON → balas JSON valid tanpa pagar ```.
+          generationConfig: { temperature: 0, responseMimeType: 'application/json' },
         }),
         signal: ac.signal,
       })
