@@ -60,11 +60,11 @@ Deno.serve(async (req) => {
     const { word, tenseFocus, sentence } = await req.json()
     if (!word || !sentence) return json({ error: 'word & sentence wajib' }, 400)
     // Rapikan spasi dobel di sini supaya AI tak pernah mengoreksinya.
-    const clean = String(sentence).replace(/\s+/g, ' ').trim()
+    const input = String(sentence).replace(/\s+/g, ' ').trim()
 
     const prompt =
       `Kata target: "${word}". Tense yang diharapkan: "${tenseFocus}".\n` +
-      `Kalimat siswa: "${clean}".\n\n` +
+      `Kalimat siswa: "${input}".\n\n` +
       `Format:\n{\n  "benar": true|false,\n  "pakaiKataTarget": true|false,\n` +
       `  "tenseDetected": "string",\n  "sesuaiTenseTarget": true|false,\n` +
       `  "kalimatKoreksi": "string (kosong jika sudah benar)",\n` +
@@ -77,16 +77,29 @@ Deno.serve(async (req) => {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent` +
       `?key=${Deno.env.get('GEMINI_API_KEY')}`
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: SYSTEM }] },
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        // responseMimeType JSON → Gemini balas JSON valid, tanpa pagar ```.
-        generationConfig: { temperature: 0.3, responseMimeType: 'application/json' },
-      }),
-    })
+    // Batasi tunggu Gemini agar tak menembus limit runtime edge (yang muncul di
+    // frontend sebagai "koneksi bermasalah"). Lewat 12s → FALLBACK yang ramah.
+    const ac = new AbortController()
+    const timer = setTimeout(() => ac.abort(), 12_000)
+    let res: Response
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: SYSTEM }] },
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          // responseMimeType JSON → Gemini balas JSON valid, tanpa pagar ```.
+          generationConfig: { temperature: 0.3, responseMimeType: 'application/json' },
+        }),
+        signal: ac.signal,
+      })
+    } catch (e) {
+      console.error('Gemini fetch gagal/timeout', e)
+      return json(FALLBACK, 200)
+    } finally {
+      clearTimeout(timer)
+    }
 
     if (!res.ok) {
       console.error('Gemini error', res.status, await res.text())

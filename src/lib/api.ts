@@ -233,7 +233,9 @@ export async function evaluateSentence(word: string, tenseFocus: string, sentenc
   const { data, error } = await supabase.functions.invoke('evaluate-sentence', {
     body: { word, tenseFocus, sentence },
   })
-  if (error) throw error
+  // Log penyebab asli (status/body) — "koneksi bermasalah" di UI sering bukan
+  // internet, tapi function 404/500/timeout. Lihat di console kalau muncul.
+  if (error) { console.error('evaluate-sentence gagal:', error, await error?.context?.text?.().catch(() => '')) ; throw error }
   return data as Evaluation
 }
 
